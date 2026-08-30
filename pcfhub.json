@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "slug": "pcf-attachment-list",
+  "name": "Attachment List",
+  "tagline": "The notes and attachments on a record, with download.",
+  "category": "data",
+  "tags": [
+    "dataset",
+    "attachments",
+    "notes",
+    "annotation",
+    "download",
+    "no-react"
+  ],
+  "control": {
+    "namespace": "PCFHub",
+    "constructor": "AttachmentList",
+    "type": "dataset",
+    "framework": "standard",
+    "manifestPath": "AttachmentList/ControlManifest.Input.xml"
+  },
+  "links": {
+    "homepage": "https://github.com/pcfhub/pcf-attachment-list",
+    "support": "https://github.com/pcfhub/pcf-attachment-list/issues",
+    "license": "MIT"
+  },
+  "docs": {
+    "path": "docs"
+  },
+  "media": {
+    "logo": "media/logo.png",
+    "screenshots": [
+      "media/screenshot.png",
+      "media/screenshot-dark.png",
+      "media/screenshot-canvas.png"
+    ]
+  },
+  "demo": {
+    "fidelity": "limited",
+    "bundle": "out/controls/AttachmentList/bundle.js",
+    "styles": [
+      "out/controls/AttachmentList/css/AttachmentList.css"
+    ],
+    "datasetFixture": "demo/records.json",
+    "limitations": [
+      "Download reaches a Dataverse this page does not have. A file's bytes are not on the view — they are fetched one row at a time with context.webAPI.retrieveRecord and handed to context.navigation.openFile, and the harness supplies neither. Pressing Download here does what the control does on any host that cannot deliver a file: it reports the press through its output property and says so in words. That is the real behaviour, and it is not a file.",
+      "Text notes and files are both real. Everything else on the page — the glyphs, the sizes, the titles, the dates, hiding the text notes — is the control doing exactly what it does on a form.",
+      "Paging is inert. The harness seeds a single page and reports no next or previous page, so the pager renders disabled and the page-size property does nothing. On a form it is how many notes are fetched at a time."
+    ],
+    "presets": [
+      {
+        "slug": "default",
+        "name": "Notes and files",
+        "description": "What a Notes subgrid actually holds: four attachments and two text notes, with a glyph picked from each file's type.",
+        "props": {
+          "bodyColumn": "documentbody",
+          "hideTextNotes": false,
+          "maxDownloadSizeMb": 32,
+          "pageSize": 25
+        },
+        "isDefault": true
+      },
+      {
+        "slug": "files-only",
+        "name": "Files only",
+        "description": "The same record with the text notes hidden — the configuration for a form section that is about documents rather than about the conversation.",
+        "props": {
+          "bodyColumn": "documentbody",
+          "hideTextNotes": true,
+          "maxDownloadSizeMb": 32,
+          "pageSize": 25
+        }
+      }
+    ]
+  }
+}

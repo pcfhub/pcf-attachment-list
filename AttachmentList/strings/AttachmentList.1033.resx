@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!--
+    Display names and descriptions for everything declared in
+    ControlManifest.Input.xml. PCFHub reads the manifest, so these strings are
+    what appear in the component's API reference on the hub as well as in the
+    maker's properties pane.
+
+    Copy this file to add a language — AttachmentList.3082.resx for Spanish, and so
+    on — then list it under <resources> in the manifest.
+  -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+
+<data name="AttachmentList_Name" xml:space="preserve">
+    <value>Attachment List</value>
+  </data>
+  <data name="AttachmentList_Desc" xml:space="preserve">
+    <value>The notes and attachments on a record, with download.</value>
+  </data>
+
+  <data name="Records_DataSet_Name" xml:space="preserve">
+    <value>Notes</value>
+  </data>
+
+  <data name="fileNameColumn_Name" xml:space="preserve">
+    <value>File name</value>
+  </data>
+  <data name="fileNameColumn_Desc" xml:space="preserve">
+    <value>The column holding the file name — filename on the Note table.</value>
+  </data>
+  <data name="fileSizeColumn_Name" xml:space="preserve">
+    <value>File size</value>
+  </data>
+  <data name="fileSizeColumn_Desc" xml:space="preserve">
+    <value>The column holding the size in bytes — filesize. Without it, no size is shown.</value>
+  </data>
+  <data name="mimeTypeColumn_Name" xml:space="preserve">
+    <value>File type</value>
+  </data>
+  <data name="mimeTypeColumn_Desc" xml:space="preserve">
+    <value>The column holding the MIME type — mimetype. Without it, downloads are saved as a generic file.</value>
+  </data>
+  <data name="isDocumentColumn_Name" xml:space="preserve">
+    <value>Is a file</value>
+  </data>
+  <data name="isDocumentColumn_Desc" xml:space="preserve">
+    <value>The column that tells a file from a text note — isdocument. Without it, a row with a file name is treated as a file.</value>
+  </data>
+  <data name="subjectColumn_Name" xml:space="preserve">
+    <value>Title</value>
+  </data>
+  <data name="subjectColumn_Desc" xml:space="preserve">
+    <value>The column holding the title — subject. Without it, the file name is the title.</value>
+  </data>
+  <data name="createdOnColumn_Name" xml:space="preserve">
+    <value>Created on</value>
+  </data>
+  <data name="createdOnColumn_Desc" xml:space="preserve">
+    <value>The column holding the creation date — createdon. Without it, no date is shown.</value>
+  </data>
+
+  <data name="bodyColumn_Name" xml:space="preserve">
+    <value>Body column</value>
+  </data>
+  <data name="bodyColumn_Desc" xml:space="preserve">
+    <value>The logical name of the column holding the file itself. Fetched only when a file is downloaded.</value>
+  </data>
+  <data name="hideTextNotes_Name" xml:space="preserve">
+    <value>Hide text notes</value>
+  </data>
+  <data name="hideTextNotes_Desc" xml:space="preserve">
+    <value>Show only rows that carry a file.</value>
+  </data>
+  <data name="maxDownloadSizeMb_Name" xml:space="preserve">
+    <value>Maximum download (MB)</value>
+  </data>
+  <data name="maxDownloadSizeMb_Desc" xml:space="preserve">
+    <value>Files larger than this are refused before they are fetched.</value>
+  </data>
+  <data name="pageSize_Name" xml:space="preserve">
+    <value>Page size</value>
+  </data>
+  <data name="pageSize_Desc" xml:space="preserve">
+    <value>How many rows to request per page. The platform may clamp large values.</value>
+  </data>
+  <data name="downloadedRecordId_Name" xml:space="preserve">
+    <value>Downloaded note ID</value>
+  </data>
+  <data name="downloadedRecordId_Desc" xml:space="preserve">
+    <value>The ID of the row whose download was last requested. Use this to download the file yourself in a canvas app.</value>
+  </data>
+
+  <data name="AttachmentList_Loading" xml:space="preserve">
+    <value>Loading notes…</value>
+  </data>
+  <data name="AttachmentList_Empty" xml:space="preserve">
+    <value>No notes on this record.</value>
+  </data>
+  <data name="AttachmentList_NoFiles" xml:space="preserve">
+    <value>No attachments on this record.</value>
+  </data>
+  <data name="AttachmentList_Error" xml:space="preserve">
+    <value>These notes could not be loaded.</value>
+  </data>
+  <data name="AttachmentList_NoFileNameColumn" xml:space="preserve">
+    <value>Map a column to File name to list the attachments.</value>
+  </data>
+  <data name="AttachmentList_ListLabel" xml:space="preserve">
+    <value>Attachments</value>
+  </data>
+  <data name="AttachmentList_UntitledFile" xml:space="preserve">
+    <value>Untitled file</value>
+  </data>
+  <data name="AttachmentList_UntitledNote" xml:space="preserve">
+    <value>Untitled note</value>
+  </data>
+
+  <data name="AttachmentList_KB" xml:space="preserve">
+    <value>{0} KB</value>
+  </data>
+  <data name="AttachmentList_MB" xml:space="preserve">
+    <value>{0} MB</value>
+  </data>
+
+  <data name="AttachmentList_Download" xml:space="preserve">
+    <value>Download {0}</value>
+  </data>
+  <data name="AttachmentList_Downloading" xml:space="preserve">
+    <value>Downloading {0}…</value>
+  </data>
+  <data name="AttachmentList_DownloadFailed" xml:space="preserve">
+    <value>The download failed. {0}</value>
+  </data>
+  <data name="AttachmentList_NoContent" xml:space="preserve">
+    <value>{0} has no file to download.</value>
+  </data>
+  <data name="AttachmentList_TooLarge" xml:space="preserve">
+    <value>This file is larger than the {0} MB limit set for this control.</value>
+  </data>
+  <data name="AttachmentList_DownloadUnavailable" xml:space="preserve">
+    <value>Downloading needs a model-driven app.</value>
+  </data>
+
+  <data name="AttachmentList_Previous" xml:space="preserve">
+    <value>Previous page</value>
+  </data>
+  <data name="AttachmentList_Next" xml:space="preserve">
+    <value>Next page</value>
+  </data>
+  <data name="AttachmentList_PageStatus" xml:space="preserve">
+    <value>Page {0}</value>
+  </data>
+  <data name="AttachmentList_RangeStatus" xml:space="preserve">
+    <value>{0}–{1} of {2}</value>
+  </data>
+</root>

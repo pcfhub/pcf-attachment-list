@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<manifest>
+  <!--
+    The version here is what the Power Platform upgrades on, and the release
+    workflow refuses to publish a tag that disagrees with it. Bump this,
+    Solution/src/Other/Solution.xml and package.json in the same commit.
+  -->
+  <control namespace="PCFHub"
+           constructor="AttachmentList"
+           version="0.1.0"
+           display-name-key="AttachmentList_Name"
+           description-key="AttachmentList_Desc"
+           control-type="standard">
+
+    <external-service-usage enabled="false" />
+
+    <!--
+      PROPERTY-SET ROLES, AND THE REASON IS NOT THE ONE THE TEMPLATE GIVES.
+
+      The template's rule — declare roles when the control assigns meaning to
+      specific columns — is satisfied here obviously enough: a file name is not
+      "a column", it is what `FileObject.fileName` has to be, and the size and
+      the MIME type are two more fields of that same object. But the argument
+      that settles it is narrower.
+
+      **The out-of-the-box Notes associated view carries subject, notetext,
+      createdon and modifiedby. It does not carry filesize, mimetype or
+      isdocument.** A control that declared no roles and matched hardcoded
+      logical names off `dataset.columns` would therefore find no size, no MIME
+      type and no way to tell a file from a plain note on the single most common
+      configuration this control will ever be dropped onto — and would fail
+      *silently*, handing `openFile` an empty mimeType and putting a download
+      button on rows with nothing to download.
+
+      A mapped role puts the column into the query, and an unmapped one is
+      visible to the maker at configuration time rather than to the user at
+      click time.
+
+      They also buy something a hardcoded read could not: the download reads
+      `dataset.getTargetEntityType()` rather than the string "annotation", so a
+      custom attachment table of the same shape works unchanged.
+
+      ONLY `fileNameColumn` IS REQUIRED. Six mandatory mappings is real friction
+      on a control whose pitch is "point it at the Notes subgrid", so every
+      other role degrades to a stated fallback and the display names say which
+      annotation column each one expects.
+
+      **THE FIXTURE RULE.** A role is *found* on the column by `alias` and the
+      value is *read* off the record by `name`. Backwards, the control renders
+      nothing against a real view while looking perfect against a fixture that
+      sets the two to the same string — which is how that bug reached production
+      in pcf-tag-list. `dev/fixture.js` and `demo/records.json` set `alias` to
+      the role name and `name` to the annotation logical name, so a mistake
+      fails where it can be seen.
+
+      `cds-data-set-options` keeps the subgrid's own chrome. The command bar is
+      on because this control adds and deletes nothing: New and Delete are the
+      platform's, above a list that only reads and downloads. Quick find is on
+      because a record with forty attachments is common and this control has no
+      search of its own.
+    -->
+    <data-set name="records"
+              display-name-key="Records_DataSet_Name"
+              cds-data-set-options="displayCommandBar:true;displayQuickFind:true">
+      <property-set name="fileNameColumn"
+                    display-name-key="fileNameColumn_Name"
+                    description-key="fileNameColumn_Desc"
+                    of-type="SingleLine.Text"
+                    usage="bound"
+                    required="true" />
+      <property-set name="fileSizeColumn"
+                    display-name-key="fileSizeColumn_Name"
+                    description-key="fileSizeColumn_Desc"
+                    of-type="Whole.None"
+                    usage="bound"
+                    required="false" />
+      <property-set name="mimeTypeColumn"
+                    display-name-key="mimeTypeColumn_Name"
+                    description-key="mimeTypeColumn_Desc"
+                    of-type="SingleLine.Text"
+                    usage="bound"
+                    required="false" />
+      <property-set name="isDocumentColumn"
+                    display-name-key="isDocumentColumn_Name"
+                    description-key="isDocumentColumn_Desc"
+                    of-type="TwoOptions"
+                    usage="bound"
+                    required="false" />
+      <property-set name="subjectColumn"
+                    display-name-key="subjectColumn_Name"
+                    description-key="subjectColumn_Desc"
+                    of-type="SingleLine.Text"
+                    usage="bound"
+                    required="false" />
+      <property-set name="createdOnColumn"
+                    display-name-key="createdOnColumn_Name"
+                    description-key="createdOnColumn_Desc"
+                    of-type="DateAndTime.DateAndTime"
+                    usage="bound"
+                    required="false" />
+    </data-set>
+
+    <!--
+      The column the file's bytes live in, as a logical name.
+
+      Not a role, because it is deliberately NOT on the view: `documentbody` is
+      a base64 blob and a view that selected it would download every attachment
+      on the record every time the form opened. It is fetched one row at a time,
+      on the press, through `webAPI.retrieveRecord`.
+
+      It is interpolated into a query string, so index.ts validates it against
+      /^[a-z][a-z0-9_]*$/ before use and falls back to the default. A merely
+      *wrong* logical name is let through, so the server's own message names it
+      rather than this control guessing.
+    -->
+    <property name="bodyColumn"
+              display-name-key="bodyColumn_Name"
+              description-key="bodyColumn_Desc"
+              of-type="SingleLine.Text"
+              usage="input"
+              required="false"
+              default-value="documentbody" />
+
+    <!--
+      Defaults off, so the list shows what the subgrid shows.
+
+      A `default-value="false"` reaches PCFHub's demo harness as the raw XML
+      *string* "false", and `Boolean("false")` is `true` — so this property
+      arrives switched ON on the one surface the public sees unless it is read
+      through a normaliser. index.ts has one; every preset sets it explicitly.
+    -->
+    <property name="hideTextNotes"
+              display-name-key="hideTextNotes_Name"
+              description-key="hideTextNotes_Desc"
+              of-type="TwoOptions"
+              usage="input"
+              required="false"
+              default-value="false" />
+
+    <!--
+      The ceiling, checked BEFORE the retrieve rather than after.
+
+      `retrieveRecord` has no streaming and no abort, so a 200 MB attachment
+      arrives as one base64 string in memory and there is no refusing it once it
+      is there. Refusing on the row's own declared size is the only refusal
+      available.
+    -->
+    <property name="maxDownloadSizeMb"
+              display-name-key="maxDownloadSizeMb_Name"
+              description-key="maxDownloadSizeMb_Desc"
+              of-type="Whole.None"
+              usage="input"
+              required="false"
+              default-value="32" />
+
+    <property name="pageSize"
+              display-name-key="pageSize_Name"
+              description-key="pageSize_Desc"
+              of-type="Whole.None"
+              usage="input"
+              required="false"
+              default-value="25" />
+
+    <!--
+      Set before the download is attempted, and set even on a host that cannot
+      download at all.
+
+      That is the point of it: `navigation.openFile` is documented model-driven
+      apps only, so in a canvas app this output is the *only* route a maker has.
+      They bind it, handle OnChange, and do the download themselves. See
+      docs/canvas.md.
+    -->
+    <property name="downloadedRecordId"
+              display-name-key="downloadedRecordId_Name"
+              description-key="downloadedRecordId_Desc"
+              of-type="SingleLine.Text"
+              usage="output" />
+
+    <resources>
+      <code path="index.ts" order="1" />
+      <css path="css/AttachmentList.css" order="1" />
+      <!--
+        THE ORDER IS DELIBERATE AND 1033 GOES LAST. `pcf-start` picks the .resx
+        by manifest order rather than by locale — it reads whichever file is
+        listed last and ignores the LCID entirely. The platform itself ignores
+        the order completely, so `npm start` is the only thing in the world that
+        reads it. ADD A NEW LANGUAGE ABOVE THIS LINE.
+      -->
+      <resx path="strings/AttachmentList.3082.resx" version="1.0.0" />
+      <resx path="strings/AttachmentList.1036.resx" version="1.0.0" />
+      <resx path="strings/AttachmentList.1031.resx" version="1.0.0" />
+      <resx path="strings/AttachmentList.1041.resx" version="1.0.0" />
+      <resx path="strings/AttachmentList.1033.resx" version="1.0.0" />
+    </resources>
+
+    <!--
+      WEBAPI, AND `required="false"` IS THE WHOLE DIFFERENCE BETWEEN A LIST THAT
+      DEGRADES AND ONE THAT WILL NOT START.
+
+      The documented behaviour of `required="true"` on a host that does not
+      support a feature is not a null accessor to check — it is a design-time
+      warning and *component load failure at runtime*. WebAPI is Dataverse-
+      dependent and is not available in canvas apps, so `required="true"` would
+      mean a control that renders nothing at all there rather than one that
+      lists the notes and declines to download.
+
+      Listing is most of what this control does. With `required="false"` the
+      host leaves `context.webAPI` absent instead of refusing to load, index.ts
+      feature-detects it, and canvas gets a list plus an output property.
+
+      One feature, and it is earned: the file's bytes are not on the view and
+      there is no other way to reach them. `navigation.openFile` needs no
+      feature — it is a method on context.navigation, which is not gated.
+    -->
+    <feature-usage>
+      <uses-feature name="WebAPI" required="false" />
+    </feature-usage>
+  </control>
+</manifest>

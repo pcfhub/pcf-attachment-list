@@ -1,0 +1,20 @@
+{
+    "targetEntityType": "annotation",
+    "title": "Notes",
+    "columns": [
+        { "name": "filename", "displayName": "File name", "dataType": "SingleLine.Text", "alias": "fileNameColumn", "order": 0, "visualSizeFactor": 200, "isPrimary": true },
+        { "name": "filesize", "displayName": "File size", "dataType": "Whole.None", "alias": "fileSizeColumn", "order": 1, "visualSizeFactor": 90 },
+        { "name": "mimetype", "displayName": "File type", "dataType": "SingleLine.Text", "alias": "mimeTypeColumn", "order": 2, "visualSizeFactor": 120 },
+        { "name": "isdocument", "displayName": "Is a file", "dataType": "TwoOptions", "alias": "isDocumentColumn", "order": 3, "visualSizeFactor": 60 },
+        { "name": "subject", "displayName": "Title", "dataType": "SingleLine.Text", "alias": "subjectColumn", "order": 4, "visualSizeFactor": 180 },
+        { "name": "createdon", "displayName": "Created on", "dataType": "DateAndTime.DateAndTime", "alias": "createdOnColumn", "order": 5, "visualSizeFactor": 140 }
+    ],
+    "records": [
+        { "id": "d01", "values": { "filename": "signed-contract.pdf", "filesize": 245760, "mimetype": "application/pdf", "isdocument": true, "subject": "Signed contract", "createdon": "2026-03-02T09:14:00Z" }, "formatted": { "createdon": "2 Mar 2026 09:14" } },
+        { "id": "d02", "values": { "filename": "", "filesize": 0, "mimetype": "", "isdocument": false, "subject": "Called the customer about the renewal", "createdon": "2026-03-04T11:02:00Z" }, "formatted": { "createdon": "4 Mar 2026 11:02" } },
+        { "id": "d03", "values": { "filename": "site-photo.png", "filesize": 1572864, "mimetype": "image/png", "isdocument": true, "subject": "", "createdon": "2026-03-06T14:40:00Z" }, "formatted": { "createdon": "6 Mar 2026 14:40" } },
+        { "id": "d04", "values": { "filename": "q1-budget.xlsx", "filesize": 51200, "mimetype": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "isdocument": true, "subject": "Q1 budget", "createdon": "2026-03-07T08:00:00Z" }, "formatted": { "createdon": "7 Mar 2026 08:00" } },
+        { "id": "d05", "values": { "filename": "", "filesize": 0, "mimetype": "", "isdocument": false, "subject": "Approved by finance", "createdon": "2026-03-09T13:25:00Z" }, "formatted": { "createdon": "9 Mar 2026 13:25" } },
+        { "id": "d06", "values": { "filename": "handover.csv", "filesize": 12288, "mimetype": "text/csv", "isdocument": true, "subject": "Handover list", "createdon": "2026-03-13T17:10:00Z" }, "formatted": { "createdon": "13 Mar 2026 17:10" } }
+    ]
+}

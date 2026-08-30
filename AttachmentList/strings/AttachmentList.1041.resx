@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!--
+    Japanese (ja-JP, LCID 1041).
+
+    Keep the key set identical to AttachmentList.1033.resx. A key missing here does
+    not fall back to English — it renders as the key name, and only for users in
+    this language, so nobody who reads English ever sees it. `npm run check`
+    compares the two.
+
+    Attachment List and The notes and attachments on a record, with download. are filled by `npm run setup` with the English
+    title and tagline you gave it, because the template cannot know them. They
+    are the two values in this file worth translating by hand.
+  -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+<data name="AttachmentList_Name" xml:space="preserve">
+    <value>添付ファイル一覧</value>
+  </data>
+  <data name="AttachmentList_Desc" xml:space="preserve">
+    <value>レコードのメモと添付ファイルを一覧表示し、ダウンロードできます。</value>
+  </data>
+
+  <data name="Records_DataSet_Name" xml:space="preserve">
+    <value>メモ</value>
+  </data>
+
+  <data name="fileNameColumn_Name" xml:space="preserve">
+    <value>ファイル名</value>
+  </data>
+  <data name="fileNameColumn_Desc" xml:space="preserve">
+    <value>ファイル名の列。メモテーブルの filename です。</value>
+  </data>
+  <data name="fileSizeColumn_Name" xml:space="preserve">
+    <value>サイズ</value>
+  </data>
+  <data name="fileSizeColumn_Desc" xml:space="preserve">
+    <value>サイズ (バイト) の列。filesize です。未指定の場合はサイズを表示しません。</value>
+  </data>
+  <data name="mimeTypeColumn_Name" xml:space="preserve">
+    <value>ファイルの種類</value>
+  </data>
+  <data name="mimeTypeColumn_Desc" xml:space="preserve">
+    <value>MIME タイプの列。mimetype です。未指定の場合は汎用ファイルとして保存されます。</value>
+  </data>
+  <data name="isDocumentColumn_Name" xml:space="preserve">
+    <value>ファイルかどうか</value>
+  </data>
+  <data name="isDocumentColumn_Desc" xml:space="preserve">
+    <value>ファイルとテキストメモを区別する列。isdocument です。未指定の場合、ファイル名のある行をファイルとみなします。</value>
+  </data>
+  <data name="subjectColumn_Name" xml:space="preserve">
+    <value>タイトル</value>
+  </data>
+  <data name="subjectColumn_Desc" xml:space="preserve">
+    <value>タイトルの列。subject です。未指定の場合はファイル名を使います。</value>
+  </data>
+  <data name="createdOnColumn_Name" xml:space="preserve">
+    <value>作成日</value>
+  </data>
+  <data name="createdOnColumn_Desc" xml:space="preserve">
+    <value>作成日の列。createdon です。未指定の場合は日付を表示しません。</value>
+  </data>
+
+  <data name="bodyColumn_Name" xml:space="preserve">
+    <value>本体の列</value>
+  </data>
+  <data name="bodyColumn_Desc" xml:space="preserve">
+    <value>ファイル本体を保持する列の論理名。ダウンロード時にのみ取得します。</value>
+  </data>
+  <data name="hideTextNotes_Name" xml:space="preserve">
+    <value>テキストメモを非表示</value>
+  </data>
+  <data name="hideTextNotes_Desc" xml:space="preserve">
+    <value>ファイルを持つ行のみ表示します。</value>
+  </data>
+  <data name="maxDownloadSizeMb_Name" xml:space="preserve">
+    <value>最大ダウンロードサイズ (MB)</value>
+  </data>
+  <data name="maxDownloadSizeMb_Desc" xml:space="preserve">
+    <value>これを超えるファイルは取得前に拒否します。</value>
+  </data>
+  <data name="pageSize_Name" xml:space="preserve">
+    <value>ページサイズ</value>
+  </data>
+  <data name="pageSize_Desc" xml:space="preserve">
+    <value>1 ページあたりに要求する行数。大きい値はプラットフォーム側で制限されることがあります。</value>
+  </data>
+  <data name="downloadedRecordId_Name" xml:space="preserve">
+    <value>ダウンロードしたメモの ID</value>
+  </data>
+  <data name="downloadedRecordId_Desc" xml:space="preserve">
+    <value>直前にダウンロードを要求された行の ID。キャンバスアプリで自分でファイルを取得する際に使います。</value>
+  </data>
+
+  <data name="AttachmentList_Loading" xml:space="preserve">
+    <value>メモを読み込んでいます…</value>
+  </data>
+  <data name="AttachmentList_Empty" xml:space="preserve">
+    <value>このレコードにメモはありません。</value>
+  </data>
+  <data name="AttachmentList_NoFiles" xml:space="preserve">
+    <value>このレコードに添付ファイルはありません。</value>
+  </data>
+  <data name="AttachmentList_Error" xml:space="preserve">
+    <value>メモを読み込めませんでした。</value>
+  </data>
+  <data name="AttachmentList_NoFileNameColumn" xml:space="preserve">
+    <value>添付ファイルを一覧表示するには、[ファイル名] に列を割り当ててください。</value>
+  </data>
+  <data name="AttachmentList_ListLabel" xml:space="preserve">
+    <value>添付ファイル</value>
+  </data>
+  <data name="AttachmentList_UntitledFile" xml:space="preserve">
+    <value>無題のファイル</value>
+  </data>
+  <data name="AttachmentList_UntitledNote" xml:space="preserve">
+    <value>無題のメモ</value>
+  </data>
+
+  <data name="AttachmentList_KB" xml:space="preserve">
+    <value>{0} KB</value>
+  </data>
+  <data name="AttachmentList_MB" xml:space="preserve">
+    <value>{0} MB</value>
+  </data>
+
+  <data name="AttachmentList_Download" xml:space="preserve">
+    <value>{0} をダウンロード</value>
+  </data>
+  <data name="AttachmentList_Downloading" xml:space="preserve">
+    <value>{0} をダウンロードしています…</value>
+  </data>
+  <data name="AttachmentList_DownloadFailed" xml:space="preserve">
+    <value>ダウンロードに失敗しました。{0}</value>
+  </data>
+  <data name="AttachmentList_NoContent" xml:space="preserve">
+    <value>{0} にダウンロードできるファイルはありません。</value>
+  </data>
+  <data name="AttachmentList_TooLarge" xml:space="preserve">
+    <value>このファイルはこのコントロールに設定された {0} MB の上限を超えています。</value>
+  </data>
+  <data name="AttachmentList_DownloadUnavailable" xml:space="preserve">
+    <value>ダウンロードにはモデル駆動アプリが必要です。</value>
+  </data>
+
+  <data name="AttachmentList_Previous" xml:space="preserve">
+    <value>前のページ</value>
+  </data>
+  <data name="AttachmentList_Next" xml:space="preserve">
+    <value>次のページ</value>
+  </data>
+  <data name="AttachmentList_PageStatus" xml:space="preserve">
+    <value>ページ {0}</value>
+  </data>
+  <data name="AttachmentList_RangeStatus" xml:space="preserve">
+    <value>{2} 件中 {0}–{1} 件</value>
+  </data>
+</root>

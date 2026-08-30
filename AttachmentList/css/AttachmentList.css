@@ -1,0 +1,318 @@
+/*
+  Every rule is scoped under .AttachmentList.
+
+  A code component's CSS is loaded into the whole page, not into a shadow root,
+  so an unscoped `ul { }` here restyles the host form.
+*/
+
+/*
+  The palette, as Fluent's design tokens with literal fallbacks.
+
+  A model-driven form mounts a `FluentProvider` above every code component on
+  the page, which is what emits the tokens as CSS custom properties — so this
+  plain-DOM control reads them without mounting anything and follows the app's
+  theme. The fallbacks are what it looks like where nothing publishes them: a
+  canvas app, or PCFHub's demo harness. They are Fluent's web light theme, read
+  from `@fluentui/tokens` rather than eyeballed.
+*/
+.AttachmentList {
+    --AttachmentList-foreground: var(--colorNeutralForeground1, #242424);
+    --AttachmentList-foreground-secondary: var(--colorNeutralForeground3, #616161);
+    --AttachmentList-foreground-danger: var(--colorPaletteRedForeground1, #bc2f32);
+    --AttachmentList-foreground-brand: var(--colorBrandForeground1, #0f6cbd);
+    --AttachmentList-background: var(--colorNeutralBackground1, #ffffff);
+    --AttachmentList-background-hover: var(--colorSubtleBackgroundHover, #f5f5f5);
+    --AttachmentList-background-pressed: var(--colorSubtleBackgroundPressed, #e0e0e0);
+    --AttachmentList-stroke: var(--colorNeutralStroke2, #e0e0e0);
+    --AttachmentList-focus-inner: var(--colorStrokeFocus1, #ffffff);
+    --AttachmentList-focus-outer: var(--colorStrokeFocus2, #000000);
+    --AttachmentList-radius: var(--borderRadiusMedium, 4px);
+    --AttachmentList-duration: var(--durationFaster, 100ms);
+    --AttachmentList-curve: var(--curveEasyEase, cubic-bezier(0.33, 0, 0.67, 1));
+
+    font-family: var(--fontFamilyBase, "Segoe UI", system-ui, sans-serif);
+    font-size: var(--fontSizeBase300, 14px);
+    color: var(--AttachmentList-foreground);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacingVerticalS, 8px);
+    width: 100%;
+}
+
+/*
+  The dark fallbacks, applied from `fluentDesignLanguage.isDarkTheme` in
+  `index.ts` rather than from `prefers-color-scheme`. A model-driven app carries
+  its own theme and the operating system's setting says nothing about it, so the
+  media query would hand an OS-dark machine on a light app a dark list on a
+  white form.
+*/
+.AttachmentList--dark {
+    --AttachmentList-foreground: var(--colorNeutralForeground1, #ffffff);
+    --AttachmentList-foreground-secondary: var(--colorNeutralForeground3, #adadad);
+    --AttachmentList-foreground-danger: var(--colorPaletteRedForeground1, #e37d80);
+    --AttachmentList-foreground-brand: var(--colorBrandForeground1, #479ef5);
+    --AttachmentList-background: var(--colorNeutralBackground1, #292929);
+    --AttachmentList-background-hover: var(--colorSubtleBackgroundHover, #383838);
+    --AttachmentList-background-pressed: var(--colorSubtleBackgroundPressed, #1f1f1f);
+    --AttachmentList-stroke: var(--colorNeutralStroke2, #525252);
+    --AttachmentList-focus-inner: var(--colorStrokeFocus1, #000000);
+    --AttachmentList-focus-outer: var(--colorStrokeFocus2, #ffffff);
+}
+
+.AttachmentList-message {
+    margin: 0;
+    padding: var(--spacingVerticalL, 16px);
+    color: var(--AttachmentList-foreground-secondary);
+}
+
+.AttachmentList-error {
+    color: var(--AttachmentList-foreground-danger);
+}
+
+/*
+  A note, not a message: it describes a limitation of the host rather than the
+  state of the data, so it sits under the list rather than in place of it.
+*/
+.AttachmentList-note {
+    margin: 0;
+    color: var(--AttachmentList-foreground-secondary);
+    font-size: var(--fontSizeBase200, 12px);
+}
+
+.AttachmentList-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+/*
+  A row is three parts on one line: the glyph, the text, the action. The text
+  is the flexible one, so it is the one that has to be allowed to shrink —
+  `min-width: 0` on the body, because a flex item's default `min-width: auto`
+  is a content-based minimum that refuses to, and a long file name would push
+  the download button off a narrow form section instead.
+*/
+.AttachmentList-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacingHorizontalS, 8px);
+    padding: var(--spacingVerticalS, 8px) var(--spacingHorizontalXS, 4px);
+    border-bottom: 1px solid var(--AttachmentList-stroke);
+    transition: background-color var(--AttachmentList-duration) var(--AttachmentList-curve);
+}
+
+.AttachmentList-item:last-child {
+    border-bottom: none;
+}
+
+.AttachmentList-item:hover {
+    background-color: var(--AttachmentList-background-hover);
+}
+
+.AttachmentList-icon {
+    flex: 0 0 auto;
+    width: 20px;
+    height: 20px;
+    color: var(--AttachmentList-foreground-secondary);
+}
+
+/* A note is chrome rather than content; a file is the thing the row is for. */
+.AttachmentList-icon--note {
+    color: var(--AttachmentList-foreground-secondary);
+}
+
+.AttachmentList-item:not(.AttachmentList-item--note) .AttachmentList-icon {
+    color: var(--AttachmentList-foreground-brand);
+}
+
+.AttachmentList-body {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+/*
+  One line, truncated. A file name is identifying rather than descriptive, so
+  wrapping it to three lines costs more than the tail of it does — and the full
+  name is on the download button's own label either way.
+*/
+.AttachmentList-heading {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.AttachmentList-meta {
+    color: var(--AttachmentList-foreground-secondary);
+    font-size: var(--fontSizeBase200, 12px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.AttachmentList-download {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    /*
+      28px inside a row, which clears WCAG 2.1 AA's 24px target (2.5.8). Not
+      2.5.5's 44px at AAA: a 44px control in every row of a list makes the list
+      half again as tall, and the row itself is not the target — the button is.
+    */
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: var(--AttachmentList-radius);
+    background: transparent;
+    color: var(--AttachmentList-foreground-secondary);
+    cursor: pointer;
+    outline-style: none;
+    transition:
+        background-color var(--AttachmentList-duration) var(--AttachmentList-curve),
+        color var(--AttachmentList-duration) var(--AttachmentList-curve);
+}
+
+.AttachmentList-download:hover {
+    background-color: var(--AttachmentList-background-hover);
+    color: var(--AttachmentList-foreground-brand);
+}
+
+.AttachmentList-download:active {
+    background-color: var(--AttachmentList-background-pressed);
+}
+
+.AttachmentList-glyph {
+    width: 20px;
+    height: 20px;
+}
+
+.AttachmentList-pager {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacingHorizontalS, 8px);
+}
+
+.AttachmentList-pager button {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacingHorizontalXS, 4px);
+    min-height: 28px;
+    padding: 0 var(--spacingHorizontalS, 8px);
+    border: 1px solid var(--AttachmentList-stroke);
+    border-radius: var(--AttachmentList-radius);
+    background: transparent;
+    color: var(--AttachmentList-foreground);
+    font-family: inherit;
+    font-size: var(--fontSizeBase200, 12px);
+    cursor: pointer;
+    outline-style: none;
+}
+
+.AttachmentList-pager button:hover:not(:disabled) {
+    background-color: var(--AttachmentList-background-hover);
+}
+
+/*
+  Disabled is a different surface, not a dimmer one. `opacity` over the enabled
+  styling drags the text below contrast along with the chrome, and looks nothing
+  like Fluent, which removes the fill and greys the edge.
+*/
+.AttachmentList-pager button:disabled {
+    color: var(--AttachmentList-foreground-secondary);
+    border-color: var(--AttachmentList-stroke);
+    cursor: default;
+}
+
+.AttachmentList-pagerStatus {
+    color: var(--AttachmentList-foreground-secondary);
+    font-size: var(--fontSizeBase200, 12px);
+    font-variant-numeric: tabular-nums;
+}
+
+.AttachmentList-chevron {
+    width: 16px;
+    height: 16px;
+}
+
+/* The chevrons point the way the pager goes, which reverses with the text. */
+[dir="rtl"] .AttachmentList .AttachmentList-chevron {
+    transform: scaleX(-1);
+}
+
+/*
+  Fluent's focus indicator: a dark ring with a light one immediately inside it,
+  so the shape survives against a light row and a dark one — which on a list
+  means it survives hover, since that is a third colour again.
+
+  `:focus-visible` rather than `:focus`, so clicking Download does not leave a
+  ring behind on a list the user is not navigating by keyboard.
+*/
+.AttachmentList-download:focus-visible,
+.AttachmentList-pager button:focus-visible {
+    outline: 2px solid var(--AttachmentList-focus-outer);
+    outline-offset: -1px;
+    box-shadow: 0 0 0 2px var(--AttachmentList-focus-inner);
+}
+
+/*
+  The live region: emptied between announcements, never hidden.
+
+  A region removed from the accessibility tree between announcements is one some
+  screen readers stop watching — and this control announces from a promise
+  continuation, long after the click that caused it.
+*/
+.AttachmentList-status {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+/*
+  Forced colours. The glyph loses its brand tint, so the row separator and the
+  button border carry the structure instead — a list whose only remaining signal
+  is spacing is not a list.
+*/
+@media (forced-colors: active) {
+    .AttachmentList-item {
+        border-bottom-color: ButtonBorder;
+    }
+
+    .AttachmentList-icon,
+    .AttachmentList-item:not(.AttachmentList-item--note) .AttachmentList-icon {
+        color: CanvasText;
+    }
+
+    .AttachmentList-download {
+        border-color: ButtonBorder;
+        color: ButtonText;
+    }
+
+    .AttachmentList-pager button:disabled {
+        color: GrayText;
+        border-color: GrayText;
+    }
+
+    .AttachmentList-download:focus-visible,
+    .AttachmentList-pager button:focus-visible {
+        outline-color: Highlight;
+    }
+}
+
+/*
+  Shortened, not removed. These transitions are a row hover and a button hover,
+  and neither carries state on its own.
+*/
+@media screen and (prefers-reduced-motion: reduce) {
+    .AttachmentList-item,
+    .AttachmentList-download {
+        transition-duration: 0.01ms;
+    }
+}

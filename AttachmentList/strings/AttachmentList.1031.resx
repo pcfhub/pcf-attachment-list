@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!--
+    German (de-DE, LCID 1031).
+
+    Keep the key set identical to AttachmentList.1033.resx. A key missing here does
+    not fall back to English — it renders as the key name, and only for users in
+    this language, so nobody who reads English ever sees it. `npm run check`
+    compares the two.
+
+    Attachment List and The notes and attachments on a record, with download. are filled by `npm run setup` with the English
+    title and tagline you gave it, because the template cannot know them. They
+    are the two values in this file worth translating by hand.
+  -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+<data name="AttachmentList_Name" xml:space="preserve">
+    <value>Anlagenliste</value>
+  </data>
+  <data name="AttachmentList_Desc" xml:space="preserve">
+    <value>Die Notizen und Anlagen eines Datensatzes, mit Download.</value>
+  </data>
+
+  <data name="Records_DataSet_Name" xml:space="preserve">
+    <value>Notizen</value>
+  </data>
+
+  <data name="fileNameColumn_Name" xml:space="preserve">
+    <value>Dateiname</value>
+  </data>
+  <data name="fileNameColumn_Desc" xml:space="preserve">
+    <value>Die Spalte mit dem Dateinamen – filename in der Tabelle Notiz.</value>
+  </data>
+  <data name="fileSizeColumn_Name" xml:space="preserve">
+    <value>Größe</value>
+  </data>
+  <data name="fileSizeColumn_Desc" xml:space="preserve">
+    <value>Die Spalte mit der Größe in Bytes – filesize. Ohne sie wird keine Größe angezeigt.</value>
+  </data>
+  <data name="mimeTypeColumn_Name" xml:space="preserve">
+    <value>Dateityp</value>
+  </data>
+  <data name="mimeTypeColumn_Desc" xml:space="preserve">
+    <value>Die Spalte mit dem MIME-Typ – mimetype. Ohne sie werden Downloads als generische Datei gespeichert.</value>
+  </data>
+  <data name="isDocumentColumn_Name" xml:space="preserve">
+    <value>Ist eine Datei</value>
+  </data>
+  <data name="isDocumentColumn_Desc" xml:space="preserve">
+    <value>Die Spalte, die eine Datei von einer Textnotiz unterscheidet – isdocument. Ohne sie gilt eine Zeile mit Dateinamen als Datei.</value>
+  </data>
+  <data name="subjectColumn_Name" xml:space="preserve">
+    <value>Titel</value>
+  </data>
+  <data name="subjectColumn_Desc" xml:space="preserve">
+    <value>Die Spalte mit dem Titel – subject. Ohne sie ist der Dateiname der Titel.</value>
+  </data>
+  <data name="createdOnColumn_Name" xml:space="preserve">
+    <value>Erstellt am</value>
+  </data>
+  <data name="createdOnColumn_Desc" xml:space="preserve">
+    <value>Die Spalte mit dem Erstellungsdatum – createdon. Ohne sie wird kein Datum angezeigt.</value>
+  </data>
+
+  <data name="bodyColumn_Name" xml:space="preserve">
+    <value>Inhaltsspalte</value>
+  </data>
+  <data name="bodyColumn_Desc" xml:space="preserve">
+    <value>Der logische Name der Spalte, die die Datei enthält. Wird nur beim Download abgefragt.</value>
+  </data>
+  <data name="hideTextNotes_Name" xml:space="preserve">
+    <value>Textnotizen ausblenden</value>
+  </data>
+  <data name="hideTextNotes_Desc" xml:space="preserve">
+    <value>Nur Zeilen mit einer Datei anzeigen.</value>
+  </data>
+  <data name="maxDownloadSizeMb_Name" xml:space="preserve">
+    <value>Maximaler Download (MB)</value>
+  </data>
+  <data name="maxDownloadSizeMb_Desc" xml:space="preserve">
+    <value>Größere Dateien werden abgelehnt, bevor sie geladen werden.</value>
+  </data>
+  <data name="pageSize_Name" xml:space="preserve">
+    <value>Seitengröße</value>
+  </data>
+  <data name="pageSize_Desc" xml:space="preserve">
+    <value>Wie viele Zeilen pro Seite angefordert werden. Die Plattform kann große Werte begrenzen.</value>
+  </data>
+  <data name="downloadedRecordId_Name" xml:space="preserve">
+    <value>ID der geladenen Notiz</value>
+  </data>
+  <data name="downloadedRecordId_Desc" xml:space="preserve">
+    <value>Die ID der Zeile, deren Download zuletzt angefordert wurde. Damit lässt sich die Datei in einer Canvas-App selbst herunterladen.</value>
+  </data>
+
+  <data name="AttachmentList_Loading" xml:space="preserve">
+    <value>Notizen werden geladen…</value>
+  </data>
+  <data name="AttachmentList_Empty" xml:space="preserve">
+    <value>Keine Notizen zu diesem Datensatz.</value>
+  </data>
+  <data name="AttachmentList_NoFiles" xml:space="preserve">
+    <value>Keine Anlagen zu diesem Datensatz.</value>
+  </data>
+  <data name="AttachmentList_Error" xml:space="preserve">
+    <value>Diese Notizen konnten nicht geladen werden.</value>
+  </data>
+  <data name="AttachmentList_NoFileNameColumn" xml:space="preserve">
+    <value>Ordnen Sie dem Dateinamen eine Spalte zu, um die Anlagen aufzulisten.</value>
+  </data>
+  <data name="AttachmentList_ListLabel" xml:space="preserve">
+    <value>Anlagen</value>
+  </data>
+  <data name="AttachmentList_UntitledFile" xml:space="preserve">
+    <value>Datei ohne Titel</value>
+  </data>
+  <data name="AttachmentList_UntitledNote" xml:space="preserve">
+    <value>Notiz ohne Titel</value>
+  </data>
+
+  <data name="AttachmentList_KB" xml:space="preserve">
+    <value>{0} KB</value>
+  </data>
+  <data name="AttachmentList_MB" xml:space="preserve">
+    <value>{0} MB</value>
+  </data>
+
+  <data name="AttachmentList_Download" xml:space="preserve">
+    <value>{0} herunterladen</value>
+  </data>
+  <data name="AttachmentList_Downloading" xml:space="preserve">
+    <value>{0} wird heruntergeladen…</value>
+  </data>
+  <data name="AttachmentList_DownloadFailed" xml:space="preserve">
+    <value>Der Download ist fehlgeschlagen. {0}</value>
+  </data>
+  <data name="AttachmentList_NoContent" xml:space="preserve">
+    <value>{0} enthält keine Datei zum Herunterladen.</value>
+  </data>
+  <data name="AttachmentList_TooLarge" xml:space="preserve">
+    <value>Diese Datei überschreitet das für dieses Steuerelement festgelegte Limit von {0} MB.</value>
+  </data>
+  <data name="AttachmentList_DownloadUnavailable" xml:space="preserve">
+    <value>Für den Download wird eine modellgesteuerte App benötigt.</value>
+  </data>
+
+  <data name="AttachmentList_Previous" xml:space="preserve">
+    <value>Vorherige Seite</value>
+  </data>
+  <data name="AttachmentList_Next" xml:space="preserve">
+    <value>Nächste Seite</value>
+  </data>
+  <data name="AttachmentList_PageStatus" xml:space="preserve">
+    <value>Seite {0}</value>
+  </data>
+  <data name="AttachmentList_RangeStatus" xml:space="preserve">
+    <value>{0}–{1} von {2}</value>
+  </data>
+</root>
