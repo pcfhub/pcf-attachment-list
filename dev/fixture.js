@@ -272,6 +272,53 @@
             ),
         ],
 
+        /**
+         * The columns the annotation table HAS but the default Notes
+         * associated view does NOT select. `dev/host.js` materialises one of
+         * these when the control asks for it with `addColumn`, and ignores a
+         * request for anything not in here — which is what a real table does
+         * with a name that is not one of its own.
+         */
+        catalogue: {
+            filename: COLUMNS[0],
+            filesize: COLUMNS[1],
+            mimetype: COLUMNS[2],
+            isdocument: COLUMNS[3],
+        },
+
+        /**
+         * The out-of-the-box Notes associated view, which is what this control
+         * is actually dropped onto: Title, Description, Created On, Modified By
+         * and nothing else. No file name, no size, no MIME type, no is-a-file —
+         * and no roles mapped, because a form-side column picker cannot offer
+         * any of those columns. Everything the control needs it has to ask for.
+         */
+        defaultView: {
+            columns: [COLUMNS[4], COLUMNS[5]],
+        },
+
+        /**
+         * A maker who mapped the File name role in the form designer, which on
+         * the annotation table can only offer the deprecated column.
+         *
+         * On a real form this configuration fails the whole subgrid query with
+         * 0x80041a08 before the control renders at all; here the column simply
+         * arrives, so the control has to notice it by name.
+         */
+        deprecated: {
+            columns: [
+                {
+                    name: 'dummyfilename',
+                    displayName: 'File Name(deprecated)',
+                    dataType: 'SingleLine.Text',
+                    alias: 'fileNameColumn',
+                    order: 0,
+                    visualSizeFactor: 200,
+                },
+                COLUMNS[4],
+                COLUMNS[5],
+            ],
+        },
         /** Nothing at all on the record. */
         empty: {
             records: [],

@@ -313,12 +313,91 @@ check(
     }).find('.AttachmentList-message').textContent === 'resx:AttachmentList_NoFiles',
 );
 
-/* --------------------------------------------------------------- the states */
+/* ------------------------------------------ the columns the view does not have */
+
+/*
+ * The configuration this control is actually dropped onto, and the one that
+ * broke it in production. The default Notes associated view carries Title and
+ * Created On and nothing else, and a form-side column picker cannot offer the
+ * file columns at all — every one of them is IsValidForForm: false, while the
+ * one that is true, dummyfilename, is IsValidForRead: false and fails the whole
+ * query. So the control has to ask for what it needs rather than be given it.
+ */
+const bare = bind({ columns: fixture.defaultView.columns });
 
 check(
-    'tells the maker when the file name column was never mapped',
-    bind({ columns: fixture.unmapped.columns }).find('.AttachmentList-message').textContent ===
-        'resx:AttachmentList_NoFileNameColumn',
+    'asks the platform for the columns the view does not carry',
+    ['filename', 'filesize', 'mimetype', 'isdocument'].every((name) =>
+        bare.calls().includes('addColumn("' + name + '")'),
+    ),
+    bare.calls().filter((call) => call.indexOf('addColumn') === 0).join(' '),
+);
+
+check(
+    'and lists the files once they arrive, with their sizes',
+    bare.rows().length === 10 && bare.buttons().length === 8,
+    bare.rows().length + ' rows, ' + bare.buttons().length + ' buttons',
+);
+
+bare.settle();
+bare.settle();
+
+check(
+    'asks for each column once and then stops, even though asking is a mutator',
+    bare.calls().filter((call) => call === 'addColumn("filename")').length === 1,
+    bare.calls().filter((call) => call.indexOf('addColumn') === 0).length + ' addColumn calls in total',
+);
+
+check(
+    'does not ask for a column the maker already mapped a role to',
+    !bind().calls().some((call) => call.indexOf('addColumn') === 0),
+    bind().calls().join(' '),
+);
+
+check(
+    'does not throw on a host that has no addColumn, and lists what the view has',
+    (() => {
+        const stuck = bind({ columns: fixture.defaultView.columns, quirks: { hasAddColumn: false } });
+        return stuck.find('.AttachmentList-message').textContent === 'resx:AttachmentList_NoFileNameColumn';
+    })(),
+);
+
+/*
+ * The production failure, by name. On a real form the query has already failed
+ * by this point and the platform's own message names a column the maker has
+ * never heard of — they picked something called "File Name".
+ */
+const deprecated = bind({ columns: fixture.deprecated.columns });
+
+check(
+    'names the deprecated column rather than reporting a generic failure',
+    deprecated.find('.AttachmentList-message').textContent === 'resx:AttachmentList_DeprecatedColumn',
+    deprecated.find('.AttachmentList-message').textContent,
+);
+
+check(
+    'and says so even when the platform also reported the query as failed',
+    bind({ columns: fixture.deprecated.columns, error: true }).find('.AttachmentList-message')
+        .textContent === 'resx:AttachmentList_DeprecatedColumn',
+);
+
+check(
+    'and never asks for a column it was told not to trust',
+    !deprecated.calls().includes('addColumn("dummyfilename")'),
+    deprecated.calls().filter((call) => call.indexOf('addColumn') === 0).join(' '),
+);
+/* --------------------------------------------------------------- the states */
+
+/*
+ * 0.1.0 treated an unmapped file-name role as a dead end and said so. It is now
+ * the ordinary case -- the form designer cannot offer that column at all -- so
+ * the control asks for it instead of complaining. The message survives for the
+ * one host where asking is impossible, which the addColumn section covers.
+ */
+check(
+    'an unmapped view is no longer a dead end: it asks, and then it lists',
+    bind({ columns: fixture.unmapped.columns }).rows().length === 10,
+    bind({ columns: fixture.unmapped.columns }).rows().length + ' rows',
 );
 
 check(

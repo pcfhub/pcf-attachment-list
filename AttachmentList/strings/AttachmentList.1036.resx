@@ -159,6 +159,9 @@
   <data name="AttachmentList_NoFiles" xml:space="preserve">
     <value>Aucune pièce jointe sur cet enregistrement.</value>
   </data>
+  <data name="AttachmentList_DeprecatedColumn" xml:space="preserve">
+    <value>Ce composant ne peut pas utiliser la colonne « File Name(deprecated) » : Dataverse refuse de la lire, et l’associer empêche toute la liste de se charger. Supprimez l’association Nom du fichier sur cette sous-grille — le composant trouve le vrai nom de fichier tout seul.</value>
+  </data>
   <data name="AttachmentList_Error" xml:space="preserve">
     <value>Ces notes n’ont pas pu être chargées.</value>
   </data>

@@ -14,6 +14,18 @@ through an output property instead — see *Canvas apps*.
 **It reads. It does not add, delete or rename.** Those are the subgrid's own
 command bar, which keeps working above the control.
 
+**The Notes table's own columns cannot be mapped, so do not try.** Every
+column this control reads — `filename`, `filesize`, `mimetype`, `isdocument` —
+is marked *not valid for form* in Dataverse, so a column picker will not offer
+them. The one it offers for File name is `dummyfilename` ("File
+Name(deprecated)"), which is *not valid for read*: mapping it fails the whole
+subgrid query with `0x80041a08`, not just that column. Leave the column
+properties empty and the control asks for what it needs itself.
+
+**`addColumn` is how it asks, and it is typed optional.** On a host that does
+not provide it, the control is limited to whatever the bound view happens to
+carry — which on the default Notes view means no list at all, and it says so.
+
 **It cannot bind a File column.** Power Apps component framework does not
 support File columns as a bound property type at all — the manifest schema
 reference says so outright — and `context.webAPI` has no method that can write

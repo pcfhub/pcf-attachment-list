@@ -15,28 +15,44 @@ actually produces a file.
    one already on the form.
 3. Under **Components**, add **Attachment List** and switch it on for Web,
    Tablet and Phone.
-4. Map the six columns below.
+4. **Map nothing.** Leave every column property empty.
 :::
 
-## The six roles
+## Do not map the columns
 
-The control assigns meaning to specific columns rather than rendering whatever
-the view has, so each one is mapped by hand. The default Notes associated view
-does not contain the size, the type or the is-a-file flag — mapping them is what
-puts them in the query.
+:::callout{type=warning}
+**Leave the File name property empty**, and the other five with it. The only
+column a form designer can offer for it on the Notes table is **File
+Name(deprecated)**, which Dataverse refuses to read — mapping it stops the whole
+list loading with *"Retrieve can only return columns that are valid for read.
+Column : dummyfilename"*. If you have already mapped it, clear it.
+:::
 
-| Role | Map it to | Required | Without it |
-| --- | --- | --- | --- |
-| File name | `filename` | **yes** | The control lists nothing and says so |
-| File size | `filesize` | no | No size is shown |
-| File type | `mimetype` | no | Downloads are saved as a generic file |
-| Is a file | `isdocument` | no | A row with a file name is treated as a file |
-| Title | `subject` | no | The file name is the title |
-| Created on | `createdon` | no | No date is shown |
+That is not a limitation of this control so much as a fact about the Notes
+table. Every column the control needs — `filename`, `filesize`, `mimetype`,
+`isdocument` — is marked *not valid for form*, so a column picker will not
+offer any of them. The one it does offer is the deprecated placeholder.
 
-**Is a file** is the one worth mapping even though it is optional. Without it,
-a text note that happens to have a file name is offered a download that has
-nothing behind it.
+So the control asks for them itself, with `addColumn`, and finds them by their
+logical names. Point it at the subgrid and it works.
+
+## When you would map a role
+
+The six column properties are an **override**, for an attachment table that is
+not Notes — a custom table with the same shape but different column names.
+
+| Property | Defaults to | Without it |
+| --- | --- | --- |
+| File name | `filename` | The control lists nothing and says so |
+| File size | `filesize` | No size is shown |
+| File type | `mimetype` | Downloads are saved as a generic file |
+| Is a file | `isdocument` | A row with a file name is treated as a file |
+| Title | `subject` | The file name is the title |
+| Created on | `createdon` | No date is shown |
+
+On such a table the picker can offer the columns, because they are ordinary
+ones. Map them there and the control uses what you mapped in preference to the
+defaults.
 
 ## The Body column property
 

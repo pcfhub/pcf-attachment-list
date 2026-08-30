@@ -9,6 +9,49 @@ host that cannot make either.
 
 ## What the build disagreed with
 
+**A property-set role on the annotation table cannot be mapped correctly, and
+0.1.0 shipped requiring one.** Reported from production on 2026-08-30:
+
+    0x80041a08  Retrieve can only return columns that are valid for read.
+                Column : dummyfilename. Entity : annotation
+
+The subgrid’s own FetchXML carried `<attribute name="dummyfilename"/>` beside
+the default view columns, so the failure was the LIST, not the download, and
+nothing rendered at all.
+
+The cause, from the Dataverse annotation table reference:
+
+| Logical name | Display name | IsValidForForm | IsValidForRead |
+| --- | --- | --- | --- |
+| `dummyfilename` | File Name(deprecated) | **true** | **false** |
+| `filename` | File Name | false | true |
+| `filesize` | File Size (Bytes) | false | true |
+| `mimetype` | Mime Type | false | true |
+| `isdocument` | Is Document | false | true |
+| `subject` | Title | false | true |
+
+A form-side column picker offers columns whose metadata says
+`IsValidForForm: true`. On this table that is exactly one file-related column,
+and it is the deprecated placeholder Dataverse will not read. **So every one of
+the six roles was unmappable, and the required one took the whole control down
+when a maker did the only thing the designer allowed.**
+
+Half of the 0.1.0 reasoning was right: a mapped role *does* force its column
+into the query. That is precisely what made it fatal.
+
+0.1.1 inverts it. `dataset.addColumn` is the mechanism and roles are an
+override for custom attachment tables; every role is optional; and a role
+mapped to `dummyfilename` is refused by name with a message that says what to
+clear. **A required setting that cannot be satisfied through the tool that sets
+it is a control that cannot be installed**, which is the general lesson.
+
+**Why the rig could not have caught it.** `dev/fixture.js` set
+`alias: fileNameColumn` with `name: filename` — a correct mapping. No harness
+knows which columns a form designer will offer, because that is metadata about
+the table rather than data in it. The fixture now carries a `defaultView` with
+neither, a `catalogue` of columns that exist but are not selected, and a
+`deprecated` view that maps the bad column.
+
 **PCF cannot bind a File column, so attachments have to be Note rows.** The
 manifest schema reference says so outright under the `type` element — *"At this
 time File columns are not supported"* — `ImageObject` is documented canvas-only,
@@ -85,7 +128,7 @@ control would work in English only.
 
 ## The dev rig
 
-Two additions here, both **promoted to `_template/variants/dataset/dev/host.js`
+Three additions here, all **promoted to `_template/variants/dataset/dev/host.js`
 in the same change**:
 
 1. **A `webAPI` stub whose refusals are the interesting part.** `retrieveRecord`
@@ -95,6 +138,12 @@ in the same change**:
    row, and a control that handles only one of the middle two fails here.
 2. **A `navigation` stub recording `openFile`**, with its own switch, so the
    model-driven-only half can be removed independently of the Web API.
+3. **`addColumn` that behaves like the platform’s**: it records the request,
+   and the column arrives on the NEXT fetch rather than in the call — a stub
+   that added it synchronously would pass a control that never refreshed. Only
+   a column in the fixture’s `catalogue` can arrive, because a real table
+   returns nothing for a name that is not one of its own. `hasAddColumn`
+   removes the method, since it is typed optional.
 
 **The suite is asynchronous below the divider**, and `report()` is called from
 the end of that block rather than from the top level — otherwise a rejected
@@ -112,14 +161,6 @@ Not `mocked`, which would tell a visitor to expect a file.
 
 ## Not verified
 
-**That a mapped `property-set` role forces its column into the query when the
-bound view does not contain it.** The entire case for declaring six roles rests
-on this, and nothing local can prove it. *What would prove it:* put the control
-on a Notes subgrid using the out-of-the-box associated view — which carries
-`subject`, `notetext`, `createdon` and `modifiedby` and none of the other three
-— map all six roles, and check whether sizes and glyphs appear. *If it is
-false:* feature-detect `dataset.addColumn?.(name)`, which is typed optional, and
-correct the manifest comment.
 
 **That `navigation.openFile` saves anything at all**, and that a 32 MB base64
 string survives the round trip without stalling the tab. Read from the type

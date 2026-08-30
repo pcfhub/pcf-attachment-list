@@ -20,11 +20,18 @@ order: 5
 
 ::props-table{kind=dataset_column}
 
-Six roles, one of them required. They are roles rather than a read of whatever
-the view supplies because the default Notes associated view does not contain the
-size, the type or the is-a-file flag — mapping a role is what puts the column in
-the query, and an unmapped one is visible to the maker at configuration time
-rather than to the user at click time.
+Six roles, none of them required, and on the Notes table you should leave all
+six empty.
+
+They are an **override** rather than the mechanism. Every column this control
+needs on the `annotation` table is marked *not valid for form*, so a form-side
+column picker cannot offer any of them — and the one it does offer for File
+name, `dummyfilename`, cannot be read at all and fails the entire subgrid query
+if mapped. The control therefore asks for its columns with
+`dataset.addColumn` and finds them by logical name.
+
+Map a role only for a custom attachment table whose columns are named something
+else. See *Model-driven apps*.
 
 ## Input properties
 

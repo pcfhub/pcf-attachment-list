@@ -7,7 +7,7 @@
   -->
   <control namespace="PCFHub"
            constructor="AttachmentList"
-           version="0.1.0"
+           version="0.1.1"
            display-name-key="AttachmentList_Name"
            description-key="AttachmentList_Desc"
            control-type="standard">
@@ -15,50 +15,61 @@
     <external-service-usage enabled="false" />
 
     <!--
-      PROPERTY-SET ROLES, AND THE REASON IS NOT THE ONE THE TEMPLATE GIVES.
+      ROLES ARE AN OVERRIDE, NOT THE MECHANISM. THE PLATFORM SETTLED THIS.
 
-      The template's rule — declare roles when the control assigns meaning to
-      specific columns — is satisfied here obviously enough: a file name is not
-      "a column", it is what `FileObject.fileName` has to be, and the size and
-      the MIME type are two more fields of that same object. But the argument
-      that settles it is narrower.
+      0.1.0 declared six roles and made `fileNameColumn` required, on the
+      argument that the out-of-the-box Notes associated view carries subject,
+      notetext, createdon and modifiedby but NOT filesize, mimetype or
+      isdocument — so a mapped role was the way to get them into the query.
 
-      **The out-of-the-box Notes associated view carries subject, notetext,
-      createdon and modifiedby. It does not carry filesize, mimetype or
-      isdocument.** A control that declared no roles and matched hardcoded
-      logical names off `dataset.columns` would therefore find no size, no MIME
-      type and no way to tell a file from a plain note on the single most common
-      configuration this control will ever be dropped onto — and would fail
-      *silently*, handing `openFile` an empty mimeType and putting a download
-      button on rows with nothing to download.
+      **That argument was right about the mechanism and fatal in practice.**
+      Observed on a real form, 2026-08-30: a form-side column picker offers
+      only columns whose metadata says `IsValidForForm: true`, and on the
+      annotation table every column this control needs is `false`. The one
+      file-related column that is `true` is `dummyfilename` — display name
+      "File Name(deprecated)", described by Microsoft as "Dummy attribute
+      associated with the note attachment", and `IsValidForRead: false`.
 
-      A mapped role puts the column into the query, and an unmapped one is
-      visible to the maker at configuration time rather than to the user at
-      click time.
+      So the maker is offered exactly one plausible candidate for File name,
+      picks it, and the platform writes <attribute name="dummyfilename"/>
+      into the subgrid’s FetchXML. Dataverse then refuses the WHOLE query:
 
-      They also buy something a hardcoded read could not: the download reads
-      `dataset.getTargetEntityType()` rather than the string "annotation", so a
-      custom attachment table of the same shape works unchanged.
+        0x80041a08  Retrieve can only return columns that are valid for
+                    read.  Column : dummyfilename. Entity : annotation
 
-      ONLY `fileNameColumn` IS REQUIRED. Six mandatory mappings is real friction
-      on a control whose pitch is "point it at the Notes subgrid", so every
-      other role degrades to a stated fallback and the display names say which
-      annotation column each one expects.
+      Not the file name — the whole list. `dataset.error` is set and nothing
+      renders. And because the role was `required`, the maker could not even
+      leave it unmapped to escape.
 
-      **THE FIXTURE RULE.** A role is *found* on the column by `alias` and the
-      value is *read* off the record by `name`. Backwards, the control renders
-      nothing against a real view while looking perfect against a fixture that
-      sets the two to the same string — which is how that bug reached production
-      in pcf-tag-list. `dev/fixture.js` and `demo/records.json` set `alias` to
-      the role name and `name` to the annotation logical name, so a mistake
-      fails where it can be seen.
+      **The mechanism is now `dataset.addColumn` and the roles are an
+      override.** index.ts resolves each column in three steps: a mapped
+      role by alias, else a column already on the view by its logical name,
+      else `addColumn(defaultName)` and one refresh. That takes the form
+      designer out of the loop for the annotation table entirely, while a
+      custom attachment table with different column names is still served by
+      mapping the roles — which is what they are for.
 
-      `cds-data-set-options` keeps the subgrid's own chrome. The command bar is
-      on because this control adds and deletes nothing: New and Delete are the
-      platform's, above a list that only reads and downloads. Quick find is on
-      because a record with forty attachments is common and this control has no
-      search of its own.
-    -->
+      Every role is therefore OPTIONAL, including the file name. A control
+      whose required setting cannot be satisfied through the tool that sets
+      it is a control that cannot be installed.
+
+      index.ts also refuses `dummyfilename` by name if it is mapped anyway,
+      and says so, because the generic "could not be loaded" told the maker
+      nothing about a problem with one specific and very findable cause.
+
+      **THE FIXTURE RULE still holds.** A role is *found* on the column by
+      `alias` and the value is *read* off the record by `name`. Backwards,
+      the control renders nothing against a real view while looking perfect
+      against a fixture that sets the two to the same string — which is how
+      that bug reached production in pcf-tag-list. dev/fixture.js and
+      demo/records.json set `alias` to the role name and `name` to the
+      annotation logical name, so a mistake fails where it can be seen.
+
+      `cds-data-set-options` keeps the subgrid’s own chrome. The command bar
+      is on because this control adds and deletes nothing: New and Delete are
+      the platform’s, above a list that only reads and downloads. Quick find
+      is on because a record with forty attachments is common and this
+      control has no search of its own.    -->
     <data-set name="records"
               display-name-key="Records_DataSet_Name"
               cds-data-set-options="displayCommandBar:true;displayQuickFind:true">
@@ -67,7 +78,7 @@
                     description-key="fileNameColumn_Desc"
                     of-type="SingleLine.Text"
                     usage="bound"
-                    required="true" />
+                    required="false" />
       <property-set name="fileSizeColumn"
                     display-name-key="fileSizeColumn_Name"
                     description-key="fileSizeColumn_Desc"

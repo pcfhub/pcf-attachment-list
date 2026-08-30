@@ -1,6 +1,6 @@
 {
   "name": "pcf-attachment-list",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "The notes and attachments on a record, with download.",
   "license": "MIT",
   "private": true,

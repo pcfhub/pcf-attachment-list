@@ -157,6 +157,9 @@
   <data name="AttachmentList_NoFiles" xml:space="preserve">
     <value>No attachments on this record.</value>
   </data>
+  <data name="AttachmentList_DeprecatedColumn" xml:space="preserve">
+    <value>This control cannot use the “File Name(deprecated)” column: Dataverse refuses to read it, and mapping it stops the whole list loading. Clear the File name mapping on this subgrid — the control finds the real file name on its own.</value>
+  </data>
   <data name="AttachmentList_Error" xml:space="preserve">
     <value>These notes could not be loaded.</value>
   </data>

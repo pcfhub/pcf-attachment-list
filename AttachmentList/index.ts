@@ -10,13 +10,42 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
 /** The platform's ceiling on a page. Not in the type definitions. */
 const MAX_PAGE_SIZE = 250;
 
-/** The property-set role names, as written in the manifest. */
-const ROLE_FILE_NAME = 'fileNameColumn';
-const ROLE_FILE_SIZE = 'fileSizeColumn';
-const ROLE_MIME_TYPE = 'mimeTypeColumn';
-const ROLE_IS_DOCUMENT = 'isDocumentColumn';
-const ROLE_SUBJECT = 'subjectColumn';
-const ROLE_CREATED_ON = 'createdOnColumn';
+/**
+ * Each column this control reads, as a property-set role name and the
+ * annotation logical name to fall back on.
+ *
+ * **The fallback is the mechanism and the role is the override**, which is the
+ * opposite of how 0.1.0 had it. A form-side column picker offers only
+ * columns whose metadata says `IsValidForForm: true`, and on the annotation
+ * table every column below is `false` — while `dummyfilename`, which is
+ * `true`, is `IsValidForRead: false` and takes the whole query down with it.
+ * A maker therefore cannot map these roles correctly on a Notes subgrid even
+ * if they want to. See the manifest.
+ *
+ * Roles still earn their place on a custom attachment table, where the
+ * columns are named something else entirely.
+ */
+const COLUMNS = {
+    fileName: { role: 'fileNameColumn', logical: 'filename' },
+    fileSize: { role: 'fileSizeColumn', logical: 'filesize' },
+    mimeType: { role: 'mimeTypeColumn', logical: 'mimetype' },
+    isDocument: { role: 'isDocumentColumn', logical: 'isdocument' },
+    subject: { role: 'subjectColumn', logical: 'subject' },
+    createdOn: { role: 'createdOnColumn', logical: 'createdon' },
+} as const;
+
+type ColumnKey = keyof typeof COLUMNS;
+
+/**
+ * The column a form designer offers for “File Name” on the annotation table,
+ * and the one thing that must never reach a query.
+ *
+ * Display name “File Name(deprecated)”, described by Microsoft as a “Dummy
+ * attribute associated with the note attachment”, `IsValidForRead: false`.
+ * Selecting it fails the entire retrieve with 0x80041a08 — not the column,
+ * the whole subgrid.
+ */
+const UNREADABLE_COLUMN = 'dummyfilename';
 
 /** What `openFile` is given when the row carries no MIME type: a type that
  *  makes the browser save rather than guess. */
@@ -109,6 +138,14 @@ export class AttachmentList implements ComponentFramework.StandardControl<IInput
 
     /** See the template: guarded on what *this control* asked for. */
     private appliedPageSize = 0;
+
+    /**
+     * The logical names already handed to `addColumn`.
+     *
+     * Guarded on the asking rather than on the answer, because a host that
+     * ignores `addColumn` would otherwise be asked again on every render.
+     */
+    private requested = new Set<string>();
     private page = 1;
 
     /** Which chrome button to put focus back on after the next render. */
@@ -157,6 +194,17 @@ export class AttachmentList implements ComponentFramework.StandardControl<IInput
 
         this.applyTheme(context);
         this.applyPageSize(context, context.parameters.records);
+
+        /*
+         * Asking for a column is a mutator like `setPageSize`: it does nothing
+         * until the next fetch, so it has to be followed by `refresh()` — and
+         * `refresh()` fires `updateView`. `requestColumns` is guarded on what
+         * has already been asked for, which is what stops that being a loop.
+         */
+        if (this.requestColumns(context.parameters.records)) {
+            context.parameters.records.refresh();
+        }
+
         this.render(context);
     }
 
@@ -214,17 +262,33 @@ export class AttachmentList implements ComponentFramework.StandardControl<IInput
             return;
         }
 
+        /*
+         * The one failure with a single findable cause, so it gets its own
+         * message rather than the platform’s.
+         *
+         * A role mapped to `dummyfilename` fails the whole subgrid query with
+         * 0x80041a08, and the platform’s own text names a column the maker has
+         * never heard of — they picked something called “File Name”. Naming
+         * the fix is the difference between a five-minute fix and a support
+         * ticket.
+         */
+        if (this.mappedTheUnreadableColumn(dataset)) {
+            this.message(getString('AttachmentList_DeprecatedColumn'), true);
+            return;
+        }
+
         if (dataset.error) {
             this.message(dataset.errorMessage || getString('AttachmentList_Error'), true);
             return;
         }
 
-        const fileNameColumn = this.roleColumn(dataset, ROLE_FILE_NAME);
+        const fileNameColumn = this.column(dataset, 'fileName');
 
         /*
-         * The one required role. In canvas the columns come from the Items
-         * Fields flyout, so an unmapped role is a maker mid-configuration
-         * rather than an impossible state — and an empty box tells them nothing.
+         * Nothing to list against, and no way to ask for more: either the host
+         * has no `addColumn` and the view carries no file name, or this is a
+         * canvas app where the columns come from the Items Fields flyout and
+         * the maker has not finished. An empty box tells them nothing.
          */
         if (!fileNameColumn) {
             this.message(getString('AttachmentList_NoFileNameColumn'));
@@ -299,18 +363,89 @@ export class AttachmentList implements ComponentFramework.StandardControl<IInput
     }
 
     /**
-     * Find a bound column by its role.
+     * Resolve one column, in three steps.
      *
-     * **By `alias`, and the values are read by `name`.** `alias` is the
-     * property-set name from the manifest; `name` is the schema name of
-     * whichever real column the maker mapped to it. Backwards, `find` never
-     * matches, the control renders nothing against a real view, and nothing
-     * errors — which is how it reached production in pcf-tag-list.
+     *   1. a mapped role, found by `alias` — the maker’s explicit override;
+     *   2. else a column already on the view, found by its logical `name`;
+     *   3. else nothing, and `requestColumns` will have asked for it.
+     *
+     * **By `alias`, and the values are read by `name`.** Backwards, `find`
+     * never matches, the control renders nothing against a real view, and
+     * nothing errors — which is how it reached production in pcf-tag-list.
+     *
+     * A role mapped to the unreadable column is refused here as well as
+     * reported: by the time this runs the query has usually already failed,
+     * but on a host that tolerated it, using the column would hand every row
+     * an empty file name.
      *
      * `columns` is typed as required and `npm start` supplies `undefined`.
      */
-    private roleColumn(dataset: DataSet, alias: string): Column | undefined {
-        return (dataset.columns ?? []).find((column) => column.alias === alias);
+    private column(dataset: DataSet, key: ColumnKey): Column | undefined {
+        const columns = dataset.columns ?? [];
+        const { role, logical } = COLUMNS[key];
+
+        const mapped = columns.find((column) => column.alias === role);
+
+        if (mapped) {
+            return mapped.name === UNREADABLE_COLUMN ? undefined : mapped;
+        }
+
+        return columns.find((column) => column.name === logical);
+    }
+
+    /**
+     * Ask the platform for the columns the view does not already carry.
+     *
+     * This is a mutator in `updateView`, so it is guarded the way
+     * `applyPageSize` is — on what *this control* has already asked for,
+     * never on whether the column then appeared. A host where `addColumn` is
+     * absent or does nothing would otherwise be asked on every render,
+     * forever.
+     *
+     * `addColumn` is typed optional and is feature-detected because of it.
+     * Where it is missing the control falls back to whatever the view
+     * happens to carry, which on the default Notes view is a list with no
+     * size and no MIME type — a worse control, but a working one.
+     */
+    private requestColumns(dataset: DataSet): boolean {
+        const columns = dataset.columns ?? [];
+        const add = dataset.addColumn;
+
+        if (typeof add !== 'function') {
+            return false;
+        }
+
+        let asked = false;
+
+        (Object.keys(COLUMNS) as ColumnKey[]).forEach((key) => {
+            const { role, logical } = COLUMNS[key];
+
+            if (this.requested.has(logical)) {
+                return;
+            }
+
+            // A mapped role is the maker being explicit; do not second-guess
+            // it by adding a column they did not choose.
+            const mapped = columns.some(
+                (column) => column.alias === role && column.name !== UNREADABLE_COLUMN,
+            );
+            const present = columns.some((column) => column.name === logical);
+
+            if (mapped || present) {
+                return;
+            }
+
+            this.requested.add(logical);
+            add.call(dataset, logical);
+            asked = true;
+        });
+
+        return asked;
+    }
+
+    /** Whether any role was mapped to the column that cannot be read. */
+    private mappedTheUnreadableColumn(dataset: DataSet): boolean {
+        return (dataset.columns ?? []).some((column) => column.name === UNREADABLE_COLUMN);
     }
 
     private itemFor(
@@ -325,11 +460,11 @@ export class AttachmentList implements ComponentFramework.StandardControl<IInput
             return null;
         }
 
-        const sizeColumn = this.roleColumn(dataset, ROLE_FILE_SIZE);
-        const isDocumentColumn = this.roleColumn(dataset, ROLE_IS_DOCUMENT);
-        const subjectColumn = this.roleColumn(dataset, ROLE_SUBJECT);
-        const createdOnColumn = this.roleColumn(dataset, ROLE_CREATED_ON);
-        const mimeTypeColumn = this.roleColumn(dataset, ROLE_MIME_TYPE);
+        const sizeColumn = this.column(dataset, 'fileSize');
+        const isDocumentColumn = this.column(dataset, 'isDocument');
+        const subjectColumn = this.column(dataset, 'subject');
+        const createdOnColumn = this.column(dataset, 'createdOn');
+        const mimeTypeColumn = this.column(dataset, 'mimeType');
 
         const fileName = text(record.getFormattedValue(fileNameColumn.name));
         const subject = subjectColumn ? text(record.getFormattedValue(subjectColumn.name)) : '';

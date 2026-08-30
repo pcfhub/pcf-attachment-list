@@ -159,6 +159,9 @@
   <data name="AttachmentList_NoFiles" xml:space="preserve">
     <value>Keine Anlagen zu diesem Datensatz.</value>
   </data>
+  <data name="AttachmentList_DeprecatedColumn" xml:space="preserve">
+    <value>Dieses Steuerelement kann die Spalte „File Name(deprecated)“ nicht verwenden: Dataverse verweigert das Lesen, und die Zuordnung verhindert das Laden der gesamten Liste. Entfernen Sie die Zuordnung für Dateiname in diesem Untraster — das Steuerelement findet den echten Dateinamen selbst.</value>
+  </data>
   <data name="AttachmentList_Error" xml:space="preserve">
     <value>Diese Notizen konnten nicht geladen werden.</value>
   </data>

@@ -38,14 +38,22 @@ is on the method, not on the bag. A press therefore sets `downloadedRecordId`
 and notifies **first**, which is the only download route canvas has, and only
 then tries the round trip.
 
-**Six `property-set` roles, not a read of `dataset.columns`.** The
-out-of-the-box Notes associated view carries `subject`, `notetext`,
-`createdon` and `modifiedby` — not `filesize`, `mimetype` or
-`isdocument`. A control matching hardcoded logical names would find no size, no
-type and no way to tell a file from a note on the most common configuration
-there is, and would fail *silently*. Roles put the column in the query, and they
-let the download read `dataset.getTargetEntityType()` instead of the string
-`annotation`, so a custom attachment table works unchanged.
+**`addColumn` is the mechanism and the roles are an override — 0.1.0 had it the
+other way round and it broke in production.** The out-of-the-box Notes view
+carries none of `filesize`, `mimetype` or `isdocument`, which is why 0.1.0
+declared roles and made the file name one required. But every column this
+control needs on the `annotation` table is `IsValidForForm: false`, so a form
+designer cannot offer any of them — and the one it does offer for File name,
+`dummyfilename`, is `IsValidForRead: false` and fails the ENTIRE subgrid query
+with `0x80041a08`. A required setting that cannot be satisfied through the tool
+that sets it is a control that cannot be installed. See SPEC.md.
+
+So the control resolves each column in three steps — a mapped role by alias,
+else a column already on the view by logical name, else `addColumn` and one
+refresh — and refuses `dummyfilename` by name if it is mapped anyway. Roles
+still earn their place on a custom attachment table, where the columns are
+named something else and the download reads `dataset.getTargetEntityType()`
+rather than the string `annotation`.
 
 **Text notes are listed, not dropped.** An `annotation` with
 `isdocument = false` has no name, no body and no size. A control that replaces
@@ -60,7 +68,7 @@ the schema name the maker mapped to it.
 
 | Role | Type | Required | Without it |
 | --- | --- | --- | --- |
-| `fileNameColumn` | SingleLine.Text | **yes** | Nothing is listed, and the control says so |
+| `fileNameColumn` | SingleLine.Text | no | Falls back to `filename`, asked for with `addColumn` |
 | `fileSizeColumn` | Whole.None | no | No size line |
 | `mimeTypeColumn` | SingleLine.Text | no | `application/octet-stream` |
 | `isDocumentColumn` | TwoOptions | no | A non-empty file name means "is a file" |

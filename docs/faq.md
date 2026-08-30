@@ -12,11 +12,20 @@ There should not be. Map the **Is a file** role to `isdocument`. Without it the
 control has to guess from whether the row has a file name, and a text note whose
 subject was typed into the wrong column looks like a file.
 
+## The list will not load, and something mentions `dummyfilename`.
+
+The **File name** property is mapped to **File Name(deprecated)** — the only
+thing a form designer offers for it on the Notes table, and a column Dataverse
+refuses to read. It fails the entire query, not just that column.
+
+Clear it, and clear the other five column properties with it. The control finds
+those columns on its own. See *Model-driven apps*.
+
 ## Nothing appears at all, and there is no error.
 
-The **File name** role is not mapped — the control says so where the list would
-be. If it is mapped and the list is still empty, the view itself has no rows;
-try the subgrid without the control.
+The control could not find a file name column and could not ask for one — which
+happens on a host that does not support `addColumn`. If the list is simply
+empty, the view itself has no rows; try the subgrid without the control.
 
 ## Why does the size say 240 KB when the file is 245,760 bytes?
 

@@ -159,6 +159,9 @@
   <data name="AttachmentList_NoFiles" xml:space="preserve">
     <value>このレコードに添付ファイルはありません。</value>
   </data>
+  <data name="AttachmentList_DeprecatedColumn" xml:space="preserve">
+    <value>このコントロールは「File Name(deprecated)」列を使用できません。Dataverse が読み取りを拒否するため、割り当てると一覧全体が読み込めません。このサブグリッドの [ファイル名] の割り当てを解除してください。実際のファイル名はコントロールが自動で見つけます。</value>
+  </data>
   <data name="AttachmentList_Error" xml:space="preserve">
     <value>メモを読み込めませんでした。</value>
   </data>
