@@ -199,19 +199,62 @@ if (typeof registration.ctor !== 'function') {
 
 const view = bind();
 
+/*
+ * **One pass, where this used to take two — and the difference is the whole
+ * point of the property having no `default-value`.**
+ *
+ * A control that overrides the host's page size calls `setPageSize` and then
+ * `refresh()` on its first `updateView`, so the platform comes back round and a
+ * mount costs two passes and a round trip. With the property unset there is
+ * nothing to ask for: the control adopts what the host is already paging at and
+ * settles on the first pass.
+ */
 check(
     'settles instead of refreshing forever',
-    !view.driven.looping && view.driven.passes === 2,
+    !view.driven.looping && view.driven.passes === 1,
     `${view.driven.passes} passes`,
 );
 
 view.settle();
 view.settle();
 
+/*
+ * The assertion about a call that must **not** happen.
+ *
+ * This file used to require exactly one `setPageSize`, which was the defect
+ * written down as a test: the manifest carried `default-value="25"`, so a maker
+ * who never touched the property still produced a control that replaced the
+ * user's own *Rows per page* on every install.
+ */
 check(
-    'asks for a page size once and then stops asking',
-    view.calls().filter((call) => call.startsWith('setPageSize')).length === 1,
+    'an unset page size overrides nothing — the host is already paging',
+    view.calls().filter((call) => call.startsWith('setPageSize')).length === 0,
     view.calls().join(' '),
+);
+
+const overriding = bind({ inputs: { pageSize: 3 } });
+
+overriding.settle();
+overriding.settle();
+
+check(
+    'a page size the maker did set is asked for once and then left alone',
+    overriding.calls().filter((call) => call.startsWith('setPageSize')).length === 1,
+    overriding.calls().join(' '),
+);
+
+/*
+ * A main grid answers the width and never the height — `-1` for the life of the
+ * control, however politely it asks. A control that waits for a positive number
+ * waits forever, which is how `pcf-row-commands` ran its rows off the bottom of
+ * a page and took the pager with them.
+ */
+const unmeasured = bind({ width: 900, quirks: { heightUnmeasured: true } });
+
+check(
+    'renders on a host that measures a width and never a height',
+    unmeasured.handle.context.mode.allocatedHeight === -1 && !unmeasured.driven.looping,
+    `allocatedHeight ${unmeasured.handle.context.mode.allocatedHeight}`,
 );
 
 /* ---------------------------------------------------------------- the list */
