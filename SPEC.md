@@ -207,10 +207,10 @@ starred ranking (`AttachmentUploader` 21★, BeverCRM's two drag-and-drop
 uploaders behind it, every 2026 write-up a multi-file upload), and this
 catalogue's Notes control could read and download but not add.
 
-**This section is written before the walkthrough, and says so.** Everything
-under *Not verified* below is exactly that. The 0.1.2 build is the probe: the
-feature is the question, and the answers go under *Measured* before 0.2.0 is
-tagged.
+**Written before the walkthrough, then closed by it on 14 September.** The
+0.1.2 build was the probe — the feature was the question — and every
+load-bearing answer is under *Measured* below. 0.2.0 is the same build with
+one label fixed.
 
 ## What the build disagreed with
 
@@ -342,55 +342,67 @@ paragraph if it is needed again.
 
 ## Measured
 
-Nothing yet. The 0.1.2 build asks; 0.2.0 records.
+On the Accounts form's Notes subgrid, 14 September 2026, `pcfhub_PCFHub.AttachmentList`
+at 0.1.2 confirmed through `customcontrols` before anything was dropped.
+
+**`createRecord('annotation', …)` with `objectid_account@odata.bind` succeeds
+from `context.webAPI`**, and the row is on the subgrid after the control's
+own `refresh()`. Four files went in — `test.txt`, `README.md`,
+`screenshot.png`, `vasos devolver.pdf` — each listed with its size and the
+server's `createdon`, each downloadable back. No prompt beyond the one
+`WebAPI` prompt 0.1.x already had.
+
+**The navigation property is `objectid_account`**, read from
+`EntityDefinitions(LogicalName='annotation')/ManyToOneRelationships`:
+`{ ReferencedEntity: "account", ReferencingEntityNavigationPropertyName:
+"objectid_account" }`. The logical-name convention held on the standard
+table; the control still reads it, because 0.5.0 met a table where it did
+not.
+
+**`organization.maxuploadfilesize` is readable by an ordinary user through
+the Web API**, and on this environment it is `8314880` — 7.9 MB, not the
+5 MB default. A 7.9 MB refusal is what the control produced before reading a
+byte of `Git-2.55.0.4-64-bit.exe`, which is the point of reading it. (0.1.2
+printed "7 MB" for it; 0.2.0 prints 7.9.)
+
+**`mode.contextInfo` is populated on the Accounts form's Notes subgrid** the
+way 0.4.0 measured it on the custom-table subgrid — the create bound to the
+right record, which is the only way the row could have appeared in it.
+
+**A drop reaches the control inside the form iframe.** Files dropped on the
+list were attached; the platform did not intercept the gesture above the
+container. The picker also worked (*Add files* → four picked).
+
+**The `accept` rule applies to a drop.** With `.pdf` set, `test (1).txt` was
+refused by name under the list and nothing was created for it.
+
+**The organisation's own refusal for a blocked extension was not exercised**
+— the `.exe` was refused by size first.
 
 ## Not verified
 
-**That `createRecord('annotation', …)` with `objectid_<table>@odata.bind`
-succeeds from a PCF on a Notes subgrid**, and that the row then appears in
-the subgrid on `refresh()`. Read from the Web API reference; the community
-uploaders do exactly this through `Xrm.WebApi`, not `context.webAPI`.
-
-**That `ManyToOneRelationships` on `annotation` lists `objectid_cll_account`
-for the custom table** the test form's subgrid sits on, and what
-`ReferencingEntityNavigationPropertyName` actually says there — 0.5.0 found
-a logical name where a schema name was expected.
-
-**That the parent's `EntitySetName` read resolves in the same order of time
-as the relationships read** (84 ms measured for one; two in parallel here).
-
-**That `organization.maxuploadfilesize` is readable by an ordinary user
-through `context.webAPI.retrieveMultipleRecords`**, and what it says on the
-test environment. The read privilege on `organization` is in the basic roles;
-a `$top=1` on a single-row table is belt and braces.
-
-**That `mode.contextInfo` is populated on the Accounts form's Notes subgrid**
-the way it was on the custom-table subgrid 0.4.0 measured, and absent on the
-Notes main grid.
-
-**That a dropped file on a real form reaches the control at all.** A
-model-driven form is an iframe with its own drag handling; whether `drop`
-fires on a code component's container or is intercepted above it has never
-been watched. The picker is the fallback either way.
-
-**That the file input opens on the model-driven mobile app**, and offers the
-camera roll there. If it does not, the `Device.pickFile` decision above is
-wrong for phones and gets revisited.
+**That the file input opens the camera roll on the model-driven mobile app.**
+Desktop only so far. If a phone cannot pick, the `Device.pickFile` decision
+above is wrong for phones and gets revisited.
 
 **That a Note over the organisation's limit is refused by Dataverse with a
-message worth showing**, for the case where the maker's ceiling is higher than
-the organisation's.
+message worth showing**, for the case where the maker's ceiling is set higher
+than the organisation's. The control refused first on this environment.
 
 **That the visible status line does not double up with the platform's own
-notification** for a create that fails.
+notification** for a create that fails — no create failed.
 
-And everything 0.1.x left there: that `openFile` saves anything, that the
-WebAPI prompt appears once, that `getTargetEntityType()` on a Notes subgrid
-returns `annotation`, and that the stylesheet applies on a real form.
+And from 0.1.x: that the WebAPI prompt appears once, and that
+`getTargetEntityType()` on a custom attachment table returns its own name.
+Both downloads and uploads addressed `annotation` correctly on this subgrid,
+so the standard case is settled.
 
 ## The walkthrough
 
-On the Accounts form, after importing 0.1.2 as an upgrade and hard-reloading:
+Closed 14 September; the answers are under *Measured*. Kept so the next
+release can re-run it:
+
+On the Accounts form, after importing as an upgrade and hard-reloading:
 
 1. Confirm the version: `fetch("/api/data/v9.2/customcontrols?$select=name,version").then(r=>r.json()).then(d=>console.log(JSON.stringify(d.value.filter(c=>/AttachmentList/.test(c.name)),null,2)))`.
 2. Drop a small `.txt` on the list. Expect the *Attaching 1 of 1* line, then
@@ -409,15 +421,17 @@ On the Accounts form, after importing 0.1.2 as an upgrade and hard-reloading:
    and paste it.
 
 Every answer goes under *Measured*; an answer that goes the wrong way removes
-the feature that rests on it rather than being worked around.
+the feature that rests on it rather than being worked around. This time none
+did, and nothing was cut — the fourth control on this form to go through
+clean on its first walkthrough, after `pcf-data-table` 0.5.0.
 
 ## Promoting a finding
 
 The skill's *Files and binary content* section covers reading a file **in**
 to a text column and handing one **out**, and says nothing about the third
 route — the one every community uploader takes: writing a file to Dataverse
-**as a Note**. That is promoted in the same change, marked as read rather than
-measured until the walkthrough closes:
+**as a Note**. That was promoted in the same change, marked as read rather than measured;
+the walkthrough closed the same day and the skill says *measured* now:
 
 - `createRecord('annotation', …)`: the five keys, bare base64, no `subject`.
 - The bind: navigation property and entity set both **read** from

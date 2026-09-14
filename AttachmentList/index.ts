@@ -1221,7 +1221,7 @@ export class AttachmentList implements ComponentFramework.StandardControl<IInput
                 problems.push(
                     getString('AttachmentList_UploadTooLarge')
                         .replace('{0}', file.name)
-                        .replace('{1}', String(Math.max(1, Math.floor(ceiling / MB)))),
+                        .replace('{1}', megabytes(ceiling)),
                 );
                 return false;
             }
@@ -1682,6 +1682,17 @@ function base64Bytes(content: string): number {
  * Never zero for a file that has content: a `fileSize` of 0 on a real file
  * reads as an empty attachment to whatever the host shows next.
  */
+/**
+ * A ceiling in MB, for the refusal line. One decimal when it is not whole:
+ * the organisation's limit on the test environment is 8,314,880 bytes, which
+ * is 7.9 MB, and "7 MB" was the first thing the walkthrough noticed.
+ */
+function megabytes(bytes: number): string {
+    const mb = bytes / MB;
+
+    return Number.isInteger(mb) ? String(mb) : mb.toFixed(1);
+}
+
 function bytesToKb(bytes: number): number {
     return bytes > 0 ? Math.max(1, Math.round(bytes / KB)) : 0;
 }
