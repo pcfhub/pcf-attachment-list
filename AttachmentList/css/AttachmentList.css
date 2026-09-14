@@ -252,6 +252,7 @@
   ring behind on a list the user is not navigating by keyboard.
 */
 .AttachmentList-download:focus-visible,
+.AttachmentList-add:focus-visible,
 .AttachmentList-pager button:focus-visible {
     outline: 2px solid var(--AttachmentList-focus-outer);
     outline-offset: -1px;
@@ -259,20 +260,93 @@
 }
 
 /*
-  The live region: emptied between announcements, never hidden.
+  Add files, and the drop target the whole control becomes.
 
-  A region removed from the accessibility tree between announcements is one some
-  screen readers stop watching — and this control announces from a promise
-  continuation, long after the click that caused it.
+  The button is a secondary Fluent button — outlined, not filled — because the
+  subgrid's own command bar above it already carries the primary New. 32px
+  tall, which is Fluent's medium and clears the 24px target.
+*/
+.AttachmentList-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--spacingHorizontalS, 8px);
+}
+
+.AttachmentList-add {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacingHorizontalXS, 4px);
+    min-height: 32px;
+    padding: 0 var(--spacingHorizontalM, 12px) 0 var(--spacingHorizontalS, 8px);
+    border: 1px solid var(--AttachmentList-stroke);
+    border-radius: var(--AttachmentList-radius);
+    background: transparent;
+    color: var(--AttachmentList-foreground);
+    font-family: inherit;
+    font-size: var(--fontSizeBase300, 14px);
+    font-weight: var(--fontWeightSemibold, 600);
+    cursor: pointer;
+    outline-style: none;
+    transition: background-color var(--AttachmentList-duration) var(--AttachmentList-curve);
+}
+
+.AttachmentList-add:hover {
+    background-color: var(--AttachmentList-background-hover);
+}
+
+.AttachmentList-add:active {
+    background-color: var(--AttachmentList-background-pressed);
+}
+
+/* Hidden with the attribute, and the attribute has to win over any display. */
+.AttachmentList-picker[hidden] {
+    display: none !important;
+}
+
+/*
+  The hint exists only while something is being dragged over the control:
+  said before, it is a line of instruction on every form for a gesture a
+  phone does not have.
+*/
+.AttachmentList-dropHint {
+    display: none;
+    color: var(--AttachmentList-foreground-brand);
+    font-size: var(--fontSizeBase200, 12px);
+}
+
+.AttachmentList--dragging {
+    outline: 2px dashed var(--AttachmentList-foreground-brand);
+    outline-offset: 2px;
+    border-radius: var(--AttachmentList-radius);
+    background-color: var(--AttachmentList-background-hover);
+}
+
+.AttachmentList--dragging .AttachmentList-dropHint {
+    display: inline;
+}
+
+/*
+  The live region: emptied between announcements, never hidden — and, since
+  0.2.0, VISIBLE.
+
+  Through 0.1.x it was clipped to a pixel, which read as tidy and meant a
+  sighted user who pressed Download on a row the server refused saw nothing
+  happen at all: the platform's explanation reached only a screen reader. An
+  upload has more to say — progress, and which of five files was refused and
+  why — so the region is now a line of text under the list, empty most of the
+  time and zero-height when it is.
+
+  It is never `display: none` between announcements: a region removed from the
+  accessibility tree is one some screen readers stop watching, and this control
+  announces from a promise continuation long after the click that caused it.
 */
 .AttachmentList-status {
-    position: absolute;
-    width: 1px;
-    height: 1px;
     margin: 0;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-    white-space: nowrap;
+    min-height: 0;
+    color: var(--AttachmentList-foreground-secondary);
+    font-size: var(--fontSizeBase200, 12px);
+    overflow-wrap: anywhere;
 }
 
 /*
@@ -290,9 +364,14 @@
         color: CanvasText;
     }
 
-    .AttachmentList-download {
+    .AttachmentList-download,
+    .AttachmentList-add {
         border-color: ButtonBorder;
         color: ButtonText;
+    }
+
+    .AttachmentList--dragging {
+        outline-color: Highlight;
     }
 
     .AttachmentList-pager button:disabled {
@@ -301,6 +380,7 @@
     }
 
     .AttachmentList-download:focus-visible,
+    .AttachmentList-add:focus-visible,
     .AttachmentList-pager button:focus-visible {
         outline-color: Highlight;
     }
@@ -312,7 +392,8 @@
 */
 @media screen and (prefers-reduced-motion: reduce) {
     .AttachmentList-item,
-    .AttachmentList-download {
+    .AttachmentList-download,
+    .AttachmentList-add {
         transition-duration: 0.01ms;
     }
 }

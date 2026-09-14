@@ -149,6 +149,30 @@
   <data name="downloadedRecordId_Desc" xml:space="preserve">
     <value>L’ID de la ligne dont le téléchargement a été demandé en dernier. À utiliser pour télécharger vous-même le fichier dans une application canevas.</value>
   </data>
+  <data name="hideUpload_Name" xml:space="preserve">
+    <value>Masquer Ajouter des fichiers</value>
+  </data>
+  <data name="hideUpload_Desc" xml:space="preserve">
+    <value>Retire le bouton Ajouter des fichiers et ignore les fichiers déposés. Joindre n’est de toute façon possible que sur un formulaire modifiable avec un enregistrement parent.</value>
+  </data>
+  <data name="accept_Name" xml:space="preserve">
+    <value>Types de fichier autorisés</value>
+  </data>
+  <data name="accept_Desc" xml:space="preserve">
+    <value>Extensions ou types MIME séparés par des virgules, comme .pdf,.docx,image/*. Vide autorise tous les fichiers.</value>
+  </data>
+  <data name="maxUploadSizeMb_Name" xml:space="preserve">
+    <value>Envoi maximal (Mo)</value>
+  </data>
+  <data name="maxUploadSizeMb_Desc" xml:space="preserve">
+    <value>Les fichiers plus volumineux sont refusés avant d’être lus. Sans valeur, la limite de pièces jointes de l’organisation s’applique.</value>
+  </data>
+  <data name="uploadedRecordId_Name" xml:space="preserve">
+    <value>ID de la note jointe</value>
+  </data>
+  <data name="uploadedRecordId_Desc" xml:space="preserve">
+    <value>L’ID de la note la plus récemment créée par ce contrôle.</value>
+  </data>
 
   <data name="AttachmentList_Loading" xml:space="preserve">
     <value>Chargement des notes…</value>
@@ -202,6 +226,37 @@
   </data>
   <data name="AttachmentList_DownloadUnavailable" xml:space="preserve">
     <value>Le téléchargement nécessite une application pilotée par modèle.</value>
+  </data>
+
+  <data name="AttachmentList_AddFiles" xml:space="preserve">
+    <value>Ajouter des fichiers</value>
+  </data>
+  <data name="AttachmentList_DropHint" xml:space="preserve">
+    <value>Déposez les fichiers ici pour les joindre</value>
+  </data>
+  <data name="AttachmentList_Uploading" xml:space="preserve">
+    <value>Ajout de {0} sur {1} : {2}…</value>
+  </data>
+  <data name="AttachmentList_UploadedOne" xml:space="preserve">
+    <value>{0} a été joint.</value>
+  </data>
+  <data name="AttachmentList_UploadedMany" xml:space="preserve">
+    <value>{0} fichiers ont été joints.</value>
+  </data>
+  <data name="AttachmentList_UploadFailed" xml:space="preserve">
+    <value>{0} n’a pas pu être joint. {1}</value>
+  </data>
+  <data name="AttachmentList_UploadTooLarge" xml:space="preserve">
+    <value>{0} dépasse la limite de {1} Mo et n’a pas été joint.</value>
+  </data>
+  <data name="AttachmentList_UploadRejectedType" xml:space="preserve">
+    <value>{0} n’est pas un type de fichier autorisé et n’a pas été joint.</value>
+  </data>
+  <data name="AttachmentList_UploadEmpty" xml:space="preserve">
+    <value>{0} est vide et n’a pas été joint.</value>
+  </data>
+  <data name="AttachmentList_UploadUnavailable" xml:space="preserve">
+    <value>Joindre des fichiers nécessite un formulaire modifiable d’application pilotée par modèle.</value>
   </data>
 
   <data name="AttachmentList_Previous" xml:space="preserve">

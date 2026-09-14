@@ -149,6 +149,30 @@
   <data name="downloadedRecordId_Desc" xml:space="preserve">
     <value>Die ID der Zeile, deren Download zuletzt angefordert wurde. Damit lässt sich die Datei in einer Canvas-App selbst herunterladen.</value>
   </data>
+  <data name="hideUpload_Name" xml:space="preserve">
+    <value>„Dateien hinzufügen“ ausblenden</value>
+  </data>
+  <data name="hideUpload_Desc" xml:space="preserve">
+    <value>Entfernt die Schaltfläche „Dateien hinzufügen“ und ignoriert abgelegte Dateien. Anhängen ist ohnehin nur in einem bearbeitbaren Formular mit übergeordnetem Datensatz möglich.</value>
+  </data>
+  <data name="accept_Name" xml:space="preserve">
+    <value>Zulässige Dateitypen</value>
+  </data>
+  <data name="accept_Desc" xml:space="preserve">
+    <value>Durch Kommas getrennte Erweiterungen oder MIME-Typen, z. B. .pdf,.docx,image/*. Leer lässt jede Datei zu.</value>
+  </data>
+  <data name="maxUploadSizeMb_Name" xml:space="preserve">
+    <value>Maximaler Upload (MB)</value>
+  </data>
+  <data name="maxUploadSizeMb_Desc" xml:space="preserve">
+    <value>Größere Dateien werden abgelehnt, bevor sie gelesen werden. Ohne Wert gilt das Anlagenlimit der Organisation.</value>
+  </data>
+  <data name="uploadedRecordId_Name" xml:space="preserve">
+    <value>ID der angehängten Notiz</value>
+  </data>
+  <data name="uploadedRecordId_Desc" xml:space="preserve">
+    <value>Die ID der zuletzt von diesem Steuerelement erstellten Notiz.</value>
+  </data>
 
   <data name="AttachmentList_Loading" xml:space="preserve">
     <value>Notizen werden geladen…</value>
@@ -202,6 +226,37 @@
   </data>
   <data name="AttachmentList_DownloadUnavailable" xml:space="preserve">
     <value>Für den Download wird eine modellgesteuerte App benötigt.</value>
+  </data>
+
+  <data name="AttachmentList_AddFiles" xml:space="preserve">
+    <value>Dateien hinzufügen</value>
+  </data>
+  <data name="AttachmentList_DropHint" xml:space="preserve">
+    <value>Dateien hier ablegen, um sie anzuhängen</value>
+  </data>
+  <data name="AttachmentList_Uploading" xml:space="preserve">
+    <value>{0} von {1} wird angehängt: {2}…</value>
+  </data>
+  <data name="AttachmentList_UploadedOne" xml:space="preserve">
+    <value>{0} wurde angehängt.</value>
+  </data>
+  <data name="AttachmentList_UploadedMany" xml:space="preserve">
+    <value>{0} Dateien wurden angehängt.</value>
+  </data>
+  <data name="AttachmentList_UploadFailed" xml:space="preserve">
+    <value>{0} konnte nicht angehängt werden. {1}</value>
+  </data>
+  <data name="AttachmentList_UploadTooLarge" xml:space="preserve">
+    <value>{0} überschreitet das Limit von {1} MB und wurde nicht angehängt.</value>
+  </data>
+  <data name="AttachmentList_UploadRejectedType" xml:space="preserve">
+    <value>{0} ist kein zulässiger Dateityp und wurde nicht angehängt.</value>
+  </data>
+  <data name="AttachmentList_UploadEmpty" xml:space="preserve">
+    <value>{0} ist leer und wurde nicht angehängt.</value>
+  </data>
+  <data name="AttachmentList_UploadUnavailable" xml:space="preserve">
+    <value>Zum Anhängen von Dateien ist ein bearbeitbares modellgesteuertes Formular erforderlich.</value>
   </data>
 
   <data name="AttachmentList_Previous" xml:space="preserve">

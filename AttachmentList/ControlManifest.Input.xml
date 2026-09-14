@@ -7,7 +7,7 @@
   -->
   <control namespace="PCFHub"
            constructor="AttachmentList"
-           version="0.1.1"
+           version="0.1.2"
            display-name-key="AttachmentList_Name"
            description-key="AttachmentList_Desc"
            control-type="standard">
@@ -66,10 +66,10 @@
       annotation logical name, so a mistake fails where it can be seen.
 
       `cds-data-set-options` keeps the subgrid’s own chrome. The command bar
-      is on because this control adds and deletes nothing: New and Delete are
-      the platform’s, above a list that only reads and downloads. Quick find
-      is on because a record with forty attachments is common and this
-      control has no search of its own.    -->
+      stays on even though 0.2.0 attaches files itself: Delete is still the
+      platform’s, and New is the only way to add a *text* note — this control
+      writes files and nothing else. Quick find is on because a record with
+      forty attachments is common and this control has no search of its own.    -->
     <data-set name="records"
               display-name-key="Records_DataSet_Name"
               cds-data-set-options="displayCommandBar:true;displayQuickFind:true">
@@ -190,6 +190,61 @@
               required="false" />
 
     <!--
+      OFF BY DEFAULT MEANS "UPLOAD IS ON", AND THE NAME IS INVERTED ON PURPOSE.
+
+      A TwoOptions input cannot default to on: `raw` is `boolean`, never
+      null, so a maker who never touches the property gets `false`. A
+      `showUpload` would therefore start hidden on every install. Named the
+      way `hideTextNotes` is, so the platform's `false` is the behaviour
+      the maker wants.
+
+      Attaching needs three things the host may withhold — `webAPI`, a
+      parent record in `mode.contextInfo`, and an editable form — and the
+      button is drawn only where all three are present. This property is the
+      maker's veto on top of that, for a section that should read and never
+      write.
+    -->
+    <property name="hideUpload"
+              display-name-key="hideUpload_Name"
+              description-key="hideUpload_Desc"
+              of-type="TwoOptions"
+              usage="input"
+              required="false"
+              default-value="false" />
+
+    <!--
+      An HTML `accept` string — ".pdf,.docx,image/*" — and nothing cleverer.
+      Checked in the control against each file's name and type, and also
+      handed to the file input so the browser's own picker narrows first.
+      Empty is everything, which is what the platform's own Notes allow.
+    -->
+    <property name="accept"
+              display-name-key="accept_Name"
+              description-key="accept_Desc"
+              of-type="SingleLine.Text"
+              usage="input"
+              required="false" />
+
+    <!--
+      NO `default-value`, FOR THE SAME REASON `pageSize` HAS NONE.
+
+      The platform already has an answer: `organization.maxuploadfilesize`
+      is the ceiling Dataverse will enforce on the create, in bytes, 5 MB out
+      of the box and raised by an admin. Unset, the control reads it once and
+      refuses an oversized file BEFORE encoding it — the server's own
+      rejection arrives after the whole base64 body has been read into memory
+      and sent. Set, the maker's number applies instead; a number above the
+      organisation's still fails on the server, which is the right place for
+      that refusal.
+    -->
+    <property name="maxUploadSizeMb"
+              display-name-key="maxUploadSizeMb_Name"
+              description-key="maxUploadSizeMb_Desc"
+              of-type="Whole.None"
+              usage="input"
+              required="false" />
+
+    <!--
       Set before the download is attempted, and set even on a host that cannot
       download at all.
 
@@ -201,6 +256,17 @@
     <property name="downloadedRecordId"
               display-name-key="downloadedRecordId_Name"
               description-key="downloadedRecordId_Desc"
+              of-type="SingleLine.Text"
+              usage="output" />
+
+    <!--
+      The Note most recently created by this control, so a form script can
+      react to an attachment arriving without polling the subgrid. Set after
+      `createRecord` resolves and before the refresh that shows the row.
+    -->
+    <property name="uploadedRecordId"
+              display-name-key="uploadedRecordId_Name"
+              description-key="uploadedRecordId_Desc"
               of-type="SingleLine.Text"
               usage="output" />
 
@@ -236,9 +302,19 @@
       host leaves `context.webAPI` absent instead of refusing to load, index.ts
       feature-detects it, and canvas gets a list plus an output property.
 
-      One feature, and it is earned: the file's bytes are not on the view and
-      there is no other way to reach them. `navigation.openFile` needs no
+      One feature, and it is earned twice over: the file's bytes are not on
+      the view and there is no other way to reach them, and 0.2.0's upload is
+      a `createRecord` on the same table. `navigation.openFile` needs no
       feature — it is a method on context.navigation, which is not gated.
+
+      NOT `Device.pickFile`, AND NOT `Utility`, DELIBERATELY. Each would be a
+      second install-time prompt. The picker is a file input, which every host
+      with a DOM has and which on a phone opens the same camera roll
+      `pickFile` would — with no `accept` restricted to three words. And
+      the entity set name a bind value needs is read from `EntityDefinitions`
+      through a same-origin fetch, which needs no feature, rather than from
+      `utils.getEntityMetadata`, which needs Utility. One prompt, for one
+      feature, that both halves of the control use.
     -->
     <feature-usage>
       <uses-feature name="WebAPI" required="false" />

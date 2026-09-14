@@ -6,13 +6,22 @@ order: 7
 
 # Limitations
 
-**Downloading needs a model-driven app.** `context.navigation.openFile` is
-documented model-driven apps only, and `context.webAPI` is not available to
-canvas at all. In a canvas app the list renders and every press is reported
-through an output property instead — see *Canvas apps*.
+**Downloading needs a model-driven app, and uploading needs a form.**
+`context.navigation.openFile` is documented model-driven apps only, and
+`context.webAPI` is not available to canvas at all. In a canvas app the list
+renders and every download press is reported through an output property
+instead — see *Canvas apps*. An upload additionally needs a record to attach
+to, which a form has and a main grid does not.
 
-**It reads. It does not add, delete or rename.** Those are the subgrid's own
-command bar, which keeps working above the control.
+**It attaches files. It does not delete, rename, or write text notes.** Those
+are the subgrid's own command bar, which keeps working above the control.
+
+**Files are attached one at a time, and the batch is not resumable.** A
+dropped file is read into memory as base64 — a third larger than the file —
+and sent as one request; the next starts when that one resolves. Navigating
+away mid-batch abandons the rest. A file over the organisation's limit is
+refused before it is read; a file the environment blocks by extension is
+refused by Dataverse after it is sent, with Dataverse's own message.
 
 **The Notes table's own columns cannot be mapped, so do not try.** Every
 column this control reads — `filename`, `filesize`, `mimetype`, `isdocument` —

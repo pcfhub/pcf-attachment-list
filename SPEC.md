@@ -1,6 +1,6 @@
 # Attachment List
 
-The notes and attachments on a record, with download.
+The notes and attachments on a record, with download — and, since 0.2.0, upload.
 
 Two platform calls, and **neither had been made anywhere else in this
 catalogue**: `context.webAPI.retrieveRecord` and `context.navigation.openFile`.
@@ -193,3 +193,242 @@ and says nothing about handing one back **out**. These belong there:
 And two for other sections: **`required="false"` versus load failure** belongs
 beside the existing `<feature-usage>` material, and **"stub the refusals first"**
 now has a second worked example in the dataset rig.
+
+
+---
+
+# 0.2.0 — upload
+
+The other direction. Files dropped on the list, or picked through *Add files*,
+become Note rows through `webAPI.createRecord`, one at a time, with one refresh
+at the end. Picked by a demand survey rather than by the template audit:
+attachment upload is the most-repeated single control in the community's
+starred ranking (`AttachmentUploader` 21★, BeverCRM's two drag-and-drop
+uploaders behind it, every 2026 write-up a multi-file upload), and this
+catalogue's Notes control could read and download but not add.
+
+**This section is written before the walkthrough, and says so.** Everything
+under *Not verified* below is exactly that. The 0.1.2 build is the probe: the
+feature is the question, and the answers go under *Measured* before 0.2.0 is
+tagged.
+
+## What the build disagreed with
+
+**The skill's "`device.pickFile` first" rule, for this shape.** The rule is
+right for `pcf-file-drop` — one file, into a column, where a phone's camera
+roll is the point. For several files into Notes it costs a second install-time
+prompt and buys a picker whose `accept` is three words. A hidden
+`<input type="file" multiple>` exists on every host with a DOM, honours the
+full `accept` rule, and on a phone opens the same roll. So no `Device.pickFile`
+feature is declared, and the manifest says why. The same reasoning kept
+`Utility` out: `getEntityMetadata` would have been a third prompt for one
+string that a same-origin fetch reads without one.
+
+**0.1.x's live region was clipped to a pixel, and that was a defect.** It read
+as tidy — a status region "for screen readers" — and it meant a sighted user
+who pressed Download on a row the server refused saw nothing happen at all.
+The platform's explanation reached only assistive technology. An upload has
+more to say, so the region is now a visible line under the list, empty and
+zero-height most of the time. `pcf-lookup-search` renders its errors inline
+for the same reason; this control had copied the pattern from the template's
+*sr-only* status and never looked at it.
+
+**A `default-value` on the ceiling would have been an override, again.** The
+platform already has the number Dataverse will enforce on the create —
+`organization.maxuploadfilesize`, 5 MB out of the box, raised by an admin — so
+`maxUploadSizeMb` carries no default and, unset, reads it once. The same rule
+`pageSize` follows, and the Gap Map's "if the platform already has an answer,
+read it" stated a third time. A read that fails answers *no ceiling* rather
+than 5 MB: an admin who raised the limit should not be told a file is too big
+by a control that could not find out.
+
+## Platform behaviour this rests on
+
+All of it read from Microsoft Learn and from `pcf-data-table` 0.5.0's
+measurements, none of it yet watched on a form. See *Not verified*.
+
+**A Note with a file is one `createRecord` on `annotation`** — `filename`,
+`mimetype`, `isdocument: true`, `documentbody` as **bare base64** (no `data:`
+prefix — the opposite of `pcf-file-drop`'s text column, which keeps the whole
+data URL), and `objectid_<table>@odata.bind` naming the parent as
+`/<entityset>(<guid>)`. `filesize` is the server's to compute. No `subject`,
+which matches the platform's own *New note with attachment*: the file name is
+the title until somebody gives it one.
+
+**`objectid` is polymorphic, and the navigation property is per table.** The
+annotation table carries one many-to-one relationship per table that has
+Notes, each with its own `ReferencingEntityNavigationPropertyName` —
+`objectid_account`, `objectid_contact`, `objectid_cll_account`. The name is
+*not* derivable by rule: 0.5.0 measured a lookup's navigation property as the
+logical name on one table where the documentation implies the schema name. So
+the control reads `EntityDefinitions(LogicalName='annotation')/ManyToOneRelationships`
+once and picks the row whose `ReferencedEntity` is the parent's table.
+
+**The entity set name is not derivable either**, and the control reads
+`EntityDefinitions(LogicalName='<parent>')?$select=EntitySetName` for it.
+`account` → `accounts` is the easy case; `category` → `categories` and a custom
+`cll_account` → `cll_accounts` are why nobody should pluralise by hand.
+
+**The parent comes from `mode.contextInfo`**, measured on a form subgrid by
+0.4.0 as `{ entityTypeName, entityId, entityRecordName }` with the GUID
+unbraced, and `null` on a main grid. Braced upper-case GUIDs are stripped and
+lowered anyway, because a dialog's GUID arrives that way and the bind value
+takes bare.
+
+**Blocked extensions are the environment's, not the control's.** Dataverse
+refuses a blocked `.exe` on the create, after the body has been sent. The
+control does not duplicate the block list; it renders Dataverse's own message.
+
+## The dev rig
+
+Four additions, all **promoted to `_template/variants/dataset/dev/host.js`
+in the same change**, and one repair:
+
+1. **`webAPI.createRecord` that holds the row until the next fetch.** Same
+   split as `deleteRecord`'s `removedPending`: the call resolves an id, and a
+   control that forgets `dataset.refresh()` draws a list one row short — which
+   is what a real form does. A row lands in *this* dataset only when created on
+   the bound table. `@odata.bind` keys are resolved through
+   `fixture.relationships` and refused the way `updateRecord` refuses them;
+   `fixture.computed(data)` supplies what the server would (`filesize`,
+   `createdon`), because the server's columns are the table's business and the
+   fixture is where the table lives; `fixture.bodyColumn` lifts the body onto
+   `row.body`, so the file just uploaded downloads back through the same
+   `retrieveRecord` stub — the suite proves the round trip rather than assuming
+   it.
+2. **`webAPI.retrieveMultipleRecords`** answered from `fixture.tables`, with
+   `$select` and `$top` honoured — for the *other* table a control reads once.
+3. **`EntityDefinitions(LogicalName='x')?$select=EntitySetName`** answered by
+   the fetch stub from `fixture.entitySets`; an unknown table 404s the way the
+   server does, and `entitySetAbsent` answers 200 with the property missing.
+4. **A canvas host withholds `webAPI` and `openFile` however the switches are
+   set**, on the same rule as `utils` and `page`. A rig that could be told
+   "canvas, with a Web API" would pass a control that works nowhere; this one
+   could, and the canvas screenshot showed the download note missing before the
+   rule went in.
+
+**The repair: the fetch stub belonged to the last host created.** Installed
+per host onto the one global `fetch`, it answered another host's read from the
+wrong fixture and logged it on the wrong call list. Found by this suite —
+which binds five views and then drops a file on the first — as "the create
+succeeded and the two fetches were never made". Each host now answers a URL
+of its own (`https://rig2.crm.invalid`, …) and one global stub routes by
+origin. Every prior dataset suite in the catalogue bound one view before
+fetching, which is why it was never hit.
+
+**Three assertions were mutation-tested**, and the first attempt was the trap
+the skill describes: the mutation tripped `no-unused-vars`, `pcf-scripts
+build` exited 0 with no bundle, and 89 assertions passed against the previous
+build. Confirmed by `md5sum` of the bundle before believing any of the three.
+Restated lint-clean, the base64-prefix mutation failed one assertion, and the
+drop-`preventDefault` plus never-refresh mutation failed six.
+
+## Demo
+
+Still `limited`, and the upload adds a reason: the hub's harness has no Web
+API and no parent record, so there is no *Add files* button on the public page
+and a dropped file is declined in words — the same as a main grid. Said in
+`demo.limitations`. `mocked` would tell a visitor to expect a row.
+
+## Screenshots
+
+`media/screenshot*.png` are rendered by headless Chrome against a scratch
+page that mounts the built bundle on `dev/host.js` with `demo/records.json`,
+a parent record, and a two-file drop already made — one taken, one over the
+ceiling — so the outcome line is in the shot. 720 CSS px wide at
+`--force-device-scale-factor=2`, `--virtual-time-budget=5000`. The canvas shot
+uses `host: 'canvas'`. The page is not in `dev/`; rebuild it from this
+paragraph if it is needed again.
+
+## Measured
+
+Nothing yet. The 0.1.2 build asks; 0.2.0 records.
+
+## Not verified
+
+**That `createRecord('annotation', …)` with `objectid_<table>@odata.bind`
+succeeds from a PCF on a Notes subgrid**, and that the row then appears in
+the subgrid on `refresh()`. Read from the Web API reference; the community
+uploaders do exactly this through `Xrm.WebApi`, not `context.webAPI`.
+
+**That `ManyToOneRelationships` on `annotation` lists `objectid_cll_account`
+for the custom table** the test form's subgrid sits on, and what
+`ReferencingEntityNavigationPropertyName` actually says there — 0.5.0 found
+a logical name where a schema name was expected.
+
+**That the parent's `EntitySetName` read resolves in the same order of time
+as the relationships read** (84 ms measured for one; two in parallel here).
+
+**That `organization.maxuploadfilesize` is readable by an ordinary user
+through `context.webAPI.retrieveMultipleRecords`**, and what it says on the
+test environment. The read privilege on `organization` is in the basic roles;
+a `$top=1` on a single-row table is belt and braces.
+
+**That `mode.contextInfo` is populated on the Accounts form's Notes subgrid**
+the way it was on the custom-table subgrid 0.4.0 measured, and absent on the
+Notes main grid.
+
+**That a dropped file on a real form reaches the control at all.** A
+model-driven form is an iframe with its own drag handling; whether `drop`
+fires on a code component's container or is intercepted above it has never
+been watched. The picker is the fallback either way.
+
+**That the file input opens on the model-driven mobile app**, and offers the
+camera roll there. If it does not, the `Device.pickFile` decision above is
+wrong for phones and gets revisited.
+
+**That a Note over the organisation's limit is refused by Dataverse with a
+message worth showing**, for the case where the maker's ceiling is higher than
+the organisation's.
+
+**That the visible status line does not double up with the platform's own
+notification** for a create that fails.
+
+And everything 0.1.x left there: that `openFile` saves anything, that the
+WebAPI prompt appears once, that `getTargetEntityType()` on a Notes subgrid
+returns `annotation`, and that the stylesheet applies on a real form.
+
+## The walkthrough
+
+On the Accounts form, after importing 0.1.2 as an upgrade and hard-reloading:
+
+1. Confirm the version: `fetch("/api/data/v9.2/customcontrols?$select=name,version").then(r=>r.json()).then(d=>console.log(JSON.stringify(d.value.filter(c=>/AttachmentList/.test(c.name)),null,2)))`.
+2. Drop a small `.txt` on the list. Expect the *Attaching 1 of 1* line, then
+   *Attached name.*, then the row. Paste the network tab's `POST …/annotations`
+   request body and the response status.
+3. Press *Add files*, pick two files, one over 5 MB. Expect one attached and
+   one refused by name with *5 MB*.
+4. Set **Allowed file types** to `.pdf` on the form, publish, drop a `.txt`.
+   Expect the refusal by type.
+5. Download the row just attached. Expect the same bytes.
+6. Open the Notes main grid with the control on it. Expect no button.
+7. In the console, `fetch("/api/data/v9.2/EntityDefinitions(LogicalName='annotation')/ManyToOneRelationships?$select=ReferencedEntity,ReferencingEntityNavigationPropertyName").then(r=>r.json()).then(d=>console.log(JSON.stringify(d.value.filter(r=>/account/.test(r.ReferencedEntity)))))`
+   and paste the result — the navigation property for the custom table is
+   the load-bearing string.
+8. `fetch("/api/data/v9.2/organizations?$select=maxuploadfilesize&$top=1").then(r=>r.json()).then(d=>console.log(JSON.stringify(d)))`
+   and paste it.
+
+Every answer goes under *Measured*; an answer that goes the wrong way removes
+the feature that rests on it rather than being worked around.
+
+## Promoting a finding
+
+The skill's *Files and binary content* section covers reading a file **in**
+to a text column and handing one **out**, and says nothing about the third
+route — the one every community uploader takes: writing a file to Dataverse
+**as a Note**. That is promoted in the same change, marked as read rather than
+measured until the walkthrough closes:
+
+- `createRecord('annotation', …)`: the five keys, bare base64, no `subject`.
+- The bind: navigation property and entity set both **read** from
+  `EntityDefinitions` through a same-origin fetch — no `Utility` prompt.
+- The ceiling: `organization.maxuploadfilesize`, read rather than defaulted.
+- The picker: a file input over `device.pickFile`, and when each is right.
+- The gestures: `dragover` prevented always (a dropped file otherwise
+  navigates the frame), depth-counted `dragleave`, `types` not `files` during
+  the drag.
+- Sequential creates, one refresh, problems collected rather than announced.
+
+And two for the rig: **a stub per host onto one global is a stub for the last
+host**, and **a canvas host withholds what canvas withholds regardless of the
+switches**.

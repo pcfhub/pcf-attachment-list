@@ -1,6 +1,6 @@
 ---
 title: Examples
-description: Three configurations, and what each is for.
+description: Four configurations, and what each is for.
 order: 6
 ---
 
@@ -21,6 +21,21 @@ The default. Everything on the record, files and notes together.
 | Created on | `createdon` |
 | Hide text notes | off |
 | Page size | 25 |
+
+## A drop zone for signed paperwork
+
+A section whose job is to collect scanned PDFs, and nothing else.
+
+| Setting | Value |
+| --- | --- |
+| Hide text notes | **on** |
+| Allowed file types | `.pdf` |
+| Maximum upload (MB) | 10 |
+
+Only PDFs are taken, whether dropped or picked; anything else is named under
+the list as not allowed. The 10 MB ceiling applies only if the organisation's
+own limit is higher — if the environment is at the 5 MB default, that is the
+limit the file meets first.
 
 ## Files only, on a contract form
 
@@ -48,7 +63,17 @@ Notes table, so a custom table of the same shape works with no code change.
 | Body column | `contoso_filedata` |
 
 The six roles are mapped to that table's own columns, and **Body column** is set
-to whatever holds the bytes.
+to whatever holds the bytes. An upload writes to the same mapped columns — the
+file name, type and is-a-file flag go wherever those three roles point — so a
+custom table needs at least **File name** mapped before files can be attached
+to it.
+
+## Reacting to an upload
+
+**Attached note ID** is set as each Note is created, before the list refreshes.
+A form script can react to it — to stamp the record, or to start something that
+needs the file to exist — by handling the control's output through the
+subgrid's `OnChange`, or simply by watching the subgrid it refreshes.
 
 ## Reacting to a download
 

@@ -1,19 +1,20 @@
 ---
 title: Canvas apps
-description: What works in a canvas app, what does not, and how to download anyway.
+description: What works in a canvas app, what does not, and how to download and attach anyway.
 order: 3
 ---
 
 # Using it in a canvas app
 
-**The list works. The download does not, and cannot.**
+**The list works. The download and the upload do not, and cannot.**
 
 Two platform APIs are involved and canvas has neither. `context.webAPI` is
 Dataverse-dependent and is
 [not available to canvas apps](https://learn.microsoft.com/power-apps/developer/component-framework/limitations),
-so the file's bytes cannot be fetched; `context.navigation.openFile` is
-documented model-driven apps only, so even with the bytes there is nothing to
-hand them to.
+so the file's bytes cannot be fetched and a Note cannot be created;
+`context.navigation.openFile` is documented model-driven apps only, so even
+with the bytes there is nothing to hand them to. There is no **Add files**
+button in a canvas app, and a dropped file is declined in words.
 
 ::image{src=media/screenshot-canvas.png alt="The list rendered in a canvas app, with a line beneath it saying downloading needs a model-driven app" zoom}
 
@@ -53,6 +54,14 @@ yours, and whether a browser can follow it depends on how the user is
 authenticated. A Power Automate flow returning the file is the route that works
 regardless, and is what most apps end up using.
 :::
+
+## Attaching it yourself
+
+Canvas already has a better route than this control could offer: the
+**Attachments** control on a form, or `Patch` against the Notes data source
+with the file from an **Add picture** or a `pcf-file-drop`. That is why the
+upload is not reimplemented here through an output property — it would be a
+worse version of something the platform gives you.
 
 ## What the maker sees
 

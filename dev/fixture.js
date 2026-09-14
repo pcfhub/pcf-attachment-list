@@ -331,5 +331,79 @@
         unmapped: {
             columns: [COLUMNS[4], COLUMNS[5]],
         },
+
+        /* ------------------------------------------------- the upload half */
+
+        /**
+         * The column the bytes go in. `dev/host.js` lifts it off a
+         * `createRecord` payload onto `row.body`, which is where
+         * `retrieveRecord` reads a download from — so a file the suite uploads
+         * can be downloaded back through the same stub.
+         */
+        bodyColumn: 'documentbody',
+
+        /**
+         * The annotation table's lookup to the record it hangs off, as
+         * `EntityDefinitions` describes it. `objectid` is polymorphic on a
+         * real table — one relationship per table that has Notes — and the
+         * navigation property is `objectid_<table>`, which is what an
+         * `@odata.bind` key has to name. Two here: the one the harness's
+         * `contextInfo` points at, and one it does not, so the suite can
+         * assert the control picked by the parent's table rather than by
+         * position.
+         */
+        relationships: [
+            { column: 'objectid', target: 'account', navigationProperty: 'objectid_account' },
+            { column: 'objectid', target: 'contact', navigationProperty: 'objectid_contact' },
+        ],
+
+        /** The parent records a bind value may point at, by table. */
+        related: {
+            account: {
+                entitySet: 'accounts',
+                rows: [{ id: 'a1', name: 'Contoso Ltd' }],
+            },
+            contact: {
+                entitySet: 'contacts',
+                rows: [{ id: 'c1', name: 'Dana Ruiz' }],
+            },
+        },
+
+        /**
+         * What `EntityDefinitions(LogicalName='x')?$select=EntitySetName`
+         * answers. The set name is not derivable from the logical name — a
+         * custom `cll_account` is `cll_accounts`, but `category` is
+         * `categories` — which is why the control reads it.
+         */
+        entitySets: {
+            account: 'accounts',
+            contact: 'contacts',
+            annotation: 'annotations',
+        },
+
+        /**
+         * The other table the uploader reads once: the organisation's own
+         * attachment ceiling, in bytes. 5 MB is Dataverse's default.
+         */
+        tables: {
+            organization: [{ organizationid: 'org1', maxuploadfilesize: 5242880 }],
+        },
+
+        /**
+         * What the server fills in on a Note the control did not: the size, from
+         * the bytes; the timestamp; and `isdocument` as a boolean whatever was
+         * sent. The row arrives on the next fetch with these on it, and the
+         * list draws them the way it draws any other row.
+         */
+        computed: function (data) {
+            var body = typeof data.documentbody === 'string' ? data.documentbody : '';
+            var padding = body.endsWith('==') ? 2 : body.endsWith('=') ? 1 : 0;
+
+            return {
+                filesize: body === '' ? 0 : Math.floor(body.length / 4) * 3 - padding,
+                createdon: '2026-03-14T12:00:00Z',
+                isdocument: body !== '',
+            };
+        },
     };
 });

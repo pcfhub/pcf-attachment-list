@@ -41,19 +41,44 @@ different things depending on what was in the row.
 
 ## Can I upload from here?
 
-No — use the subgrid's own **New** command, which sits above the control and
-does exactly that. Uploading is `pcf-file-drop`'s job.
+Yes, since 0.2.0 — drop files onto the list, or press **Add files**. Each
+becomes a Note on the record. It needs an editable form with a parent record;
+on a main grid or in a canvas app there is no button.
+
+## I dropped a file and nothing happened.
+
+Read the line under the list. A file over the organisation's attachment limit,
+one outside **Allowed file types**, or an empty one is refused there by name.
+If the line says attaching needs an editable form, the control is on a main
+grid, a read-only form, or a canvas app — none of which has a record to attach
+to or a Web API to attach with.
+
+## Why does it say 5 MB when I never set a limit?
+
+Because that is the organisation's own attachment limit — *Maximum file size*
+in system settings, 5 MB out of the box. The control reads it rather than
+guessing, so the refusal happens before the file is read instead of after it
+has been sent. Raise it in the environment, not in the control.
+
+## Where do I set the note's title?
+
+You do not; the file name is the title, the same as the platform's own *New
+note with attachment*. Open the Note afterwards to give it a subject.
 
 ## Why does it need the Web API permission?
 
-For one call: reading the body column of the row being downloaded. The bytes are
-not on the view, and there is no other way to reach them. It is declared as an
-*optional* feature, so a host without it loads the control anyway.
+For three calls: reading the body column of the row being downloaded, creating
+the Note for a file being attached, and reading the organisation's attachment
+limit. The bytes are not on the view, and there is no other way to reach or to
+write them. It is declared as an *optional* feature, so a host without it loads
+the control anyway.
 
 ## Does it work in a canvas app?
 
-The list does. The download does not, and cannot — see *Canvas apps* for the
-reason and for the output property that gives you a route.
+The list does. Neither the download nor the upload does, and neither can — see
+*Canvas apps* for the reason, for the output property that gives you a download
+route, and for why the platform's own Attachments control is the upload route
+there.
 
 ## It works on my form and not on a colleague's.
 

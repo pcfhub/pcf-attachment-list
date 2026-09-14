@@ -53,6 +53,23 @@ press, through `context.webAPI.retrieveRecord`.
 The size shown in the list comes from the row; the size handed to the download
 comes from the bytes actually being transferred.
 
+**Uploading writes through `context.webAPI.createRecord` on the bound
+table** — the file's name, MIME type and bare-base64 body, `isdocument` set,
+and an `@odata.bind` to the record the form is on. The two names that bind
+needs — the navigation property and the parent's entity set — are read from
+`EntityDefinitions` rather than derived, because neither follows from a
+logical name by rule. On a custom attachment table the same three column roles
+decide *where* the name, type and flag are written; a role that is unmapped
+there is simply not written.
+
+**The organisation's attachment limit is read, not assumed.** With **Maximum
+upload (MB)** unset the control reads `organization.maxuploadfilesize` once and
+refuses against it before the file is encoded. It carries no default because
+the platform already has the answer, and a default would override it on every
+install.
+
 **One feature is declared: WebAPI, and it is optional.** Optional rather than
 required because a required feature the host cannot supply is a component that
-fails to load rather than one that degrades — see *Canvas apps*.
+fails to load rather than one that degrades — see *Canvas apps*. Neither
+`Device.pickFile` nor `Utility` is declared: the picker is a file input and
+the metadata is a same-origin read, so there is one prompt rather than three.

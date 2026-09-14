@@ -147,6 +147,30 @@
   <data name="downloadedRecordId_Desc" xml:space="preserve">
     <value>The ID of the row whose download was last requested. Use this to download the file yourself in a canvas app.</value>
   </data>
+  <data name="hideUpload_Name" xml:space="preserve">
+    <value>Hide Add files</value>
+  </data>
+  <data name="hideUpload_Desc" xml:space="preserve">
+    <value>Remove the Add files button and ignore dropped files. Attaching is available anyway only on an editable form with a parent record.</value>
+  </data>
+  <data name="accept_Name" xml:space="preserve">
+    <value>Allowed file types</value>
+  </data>
+  <data name="accept_Desc" xml:space="preserve">
+    <value>Comma-separated extensions or MIME types, like .pdf,.docx,image/*. Empty allows any file.</value>
+  </data>
+  <data name="maxUploadSizeMb_Name" xml:space="preserve">
+    <value>Maximum upload (MB)</value>
+  </data>
+  <data name="maxUploadSizeMb_Desc" xml:space="preserve">
+    <value>Files larger than this are refused before they are read. Unset, the organisation’s own attachment limit is used.</value>
+  </data>
+  <data name="uploadedRecordId_Name" xml:space="preserve">
+    <value>Attached note ID</value>
+  </data>
+  <data name="uploadedRecordId_Desc" xml:space="preserve">
+    <value>The ID of the note most recently created by this control.</value>
+  </data>
 
   <data name="AttachmentList_Loading" xml:space="preserve">
     <value>Loading notes…</value>
@@ -200,6 +224,37 @@
   </data>
   <data name="AttachmentList_DownloadUnavailable" xml:space="preserve">
     <value>Downloading needs a model-driven app.</value>
+  </data>
+
+  <data name="AttachmentList_AddFiles" xml:space="preserve">
+    <value>Add files</value>
+  </data>
+  <data name="AttachmentList_DropHint" xml:space="preserve">
+    <value>Drop files here to attach them</value>
+  </data>
+  <data name="AttachmentList_Uploading" xml:space="preserve">
+    <value>Attaching {0} of {1}: {2}…</value>
+  </data>
+  <data name="AttachmentList_UploadedOne" xml:space="preserve">
+    <value>Attached {0}.</value>
+  </data>
+  <data name="AttachmentList_UploadedMany" xml:space="preserve">
+    <value>Attached {0} files.</value>
+  </data>
+  <data name="AttachmentList_UploadFailed" xml:space="preserve">
+    <value>{0} could not be attached. {1}</value>
+  </data>
+  <data name="AttachmentList_UploadTooLarge" xml:space="preserve">
+    <value>{0} is larger than the {1} MB limit and was not attached.</value>
+  </data>
+  <data name="AttachmentList_UploadRejectedType" xml:space="preserve">
+    <value>{0} is not an allowed file type and was not attached.</value>
+  </data>
+  <data name="AttachmentList_UploadEmpty" xml:space="preserve">
+    <value>{0} is empty and was not attached.</value>
+  </data>
+  <data name="AttachmentList_UploadUnavailable" xml:space="preserve">
+    <value>Attaching files needs an editable model-driven form.</value>
   </data>
 
   <data name="AttachmentList_Previous" xml:space="preserve">

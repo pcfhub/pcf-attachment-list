@@ -149,6 +149,30 @@
   <data name="downloadedRecordId_Desc" xml:space="preserve">
     <value>直前にダウンロードを要求された行の ID。キャンバスアプリで自分でファイルを取得する際に使います。</value>
   </data>
+  <data name="hideUpload_Name" xml:space="preserve">
+    <value>「ファイルを追加」を非表示</value>
+  </data>
+  <data name="hideUpload_Desc" xml:space="preserve">
+    <value>「ファイルを追加」ボタンを取り除き、ドロップされたファイルを無視します。添付はいずれにしても、親レコードを持つ編集可能なフォームでのみ使えます。</value>
+  </data>
+  <data name="accept_Name" xml:space="preserve">
+    <value>許可するファイルの種類</value>
+  </data>
+  <data name="accept_Desc" xml:space="preserve">
+    <value>コンマ区切りの拡張子または MIME タイプ（例: .pdf,.docx,image/*）。空欄はすべてのファイルを許可します。</value>
+  </data>
+  <data name="maxUploadSizeMb_Name" xml:space="preserve">
+    <value>アップロードの上限 (MB)</value>
+  </data>
+  <data name="maxUploadSizeMb_Desc" xml:space="preserve">
+    <value>これより大きいファイルは読み込む前に拒否されます。未設定の場合は組織の添付ファイル上限が使われます。</value>
+  </data>
+  <data name="uploadedRecordId_Name" xml:space="preserve">
+    <value>添付したメモの ID</value>
+  </data>
+  <data name="uploadedRecordId_Desc" xml:space="preserve">
+    <value>このコントロールが最後に作成したメモの ID。</value>
+  </data>
 
   <data name="AttachmentList_Loading" xml:space="preserve">
     <value>メモを読み込んでいます…</value>
@@ -202,6 +226,37 @@
   </data>
   <data name="AttachmentList_DownloadUnavailable" xml:space="preserve">
     <value>ダウンロードにはモデル駆動アプリが必要です。</value>
+  </data>
+
+  <data name="AttachmentList_AddFiles" xml:space="preserve">
+    <value>ファイルを追加</value>
+  </data>
+  <data name="AttachmentList_DropHint" xml:space="preserve">
+    <value>ここにファイルをドロップして添付</value>
+  </data>
+  <data name="AttachmentList_Uploading" xml:space="preserve">
+    <value>{2} を添付しています（{1} 件中 {0} 件目）…</value>
+  </data>
+  <data name="AttachmentList_UploadedOne" xml:space="preserve">
+    <value>{0} を添付しました。</value>
+  </data>
+  <data name="AttachmentList_UploadedMany" xml:space="preserve">
+    <value>{0} 件のファイルを添付しました。</value>
+  </data>
+  <data name="AttachmentList_UploadFailed" xml:space="preserve">
+    <value>{0} を添付できませんでした。{1}</value>
+  </data>
+  <data name="AttachmentList_UploadTooLarge" xml:space="preserve">
+    <value>{0} は上限の {1} MB を超えているため添付されませんでした。</value>
+  </data>
+  <data name="AttachmentList_UploadRejectedType" xml:space="preserve">
+    <value>{0} は許可されていないファイルの種類のため添付されませんでした。</value>
+  </data>
+  <data name="AttachmentList_UploadEmpty" xml:space="preserve">
+    <value>{0} は空のため添付されませんでした。</value>
+  </data>
+  <data name="AttachmentList_UploadUnavailable" xml:space="preserve">
+    <value>ファイルの添付には編集可能なモデル駆動型フォームが必要です。</value>
   </data>
 
   <data name="AttachmentList_Previous" xml:space="preserve">

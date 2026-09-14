@@ -27,9 +27,16 @@ cannot be cleanly uninstalled.
 
 ## Requirements
 
-The control asks for one permission at import: **WebAPI**, used for a single
-call — reading the body of the file being downloaded. There is nothing else to
-install, and no framework is bundled.
+The control asks for one permission at import: **WebAPI**. It is used for
+three calls and nothing else — reading the body of the file being downloaded,
+creating the Note for a file being attached, and reading the organisation's
+attachment size limit once so an oversized file can be refused before it is
+read. There is nothing else to install, and no framework is bundled.
+
+It deliberately asks for nothing more. The file picker is an ordinary file
+input rather than the device API, and the table metadata an upload needs is
+read through the organisation's own Web API endpoint, which needs no feature —
+so there is one prompt, not three.
 
 For canvas apps, code components must be enabled in the environment. Note that
-downloading does not work there; see *Canvas apps*.
+neither downloading nor uploading works there; see *Canvas apps*.

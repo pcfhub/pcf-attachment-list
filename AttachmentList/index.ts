@@ -84,6 +84,46 @@ const ICON_PATHS = {
 
 type IconName = keyof typeof ICON_PATHS;
 
+/**
+ * The two names a bind value needs, per parent table, and neither is
+ * derivable from the logical name.
+ *
+ * The navigation property is what `@odata.bind` keys — `objectid_account`
+ * for a Note on an account — and the entity set is what the value names:
+ * `/accounts(<guid>)`. `pcf-data-table` 0.5.0 measured that a navigation
+ * property is not the schema name by rule and not the logical name by rule,
+ * so both are **read** from `EntityDefinitions` rather than guessed. See
+ * `bindFor`.
+ */
+interface Bind {
+    readonly navigationProperty: string;
+    readonly entitySet: string;
+}
+
+/** What `mode.contextInfo` hands a form subgrid: the record it sits on. */
+interface Parent {
+    readonly entityTypeName: string;
+    readonly entityId: string;
+}
+
+/**
+ * The three host surfaces an upload needs, or `null` when any is missing.
+ *
+ * `webAPI.createRecord` is absent in canvas and on a host that withheld the
+ * feature; `mode.contextInfo` is absent on a main grid, where there is no
+ * record to attach to; and `page.getClientUrl` is what addresses the metadata
+ * read. Presence is per method, not per bag, so each is detected on its own.
+ */
+interface UploadHost {
+    readonly parent: Parent;
+    readonly clientUrl: string;
+    readonly create: (entity: string, data: Record<string, unknown>) => Promise<{ id: string }>;
+}
+
+
+/** The Dataverse default for `organization.maxuploadfilesize`. */
+const DEFAULT_UPLOAD_CEILING = 5 * 1024 * 1024;
+
 /** One row, resolved off the dataset before anything is drawn. */
 interface Item {
     readonly id: string;
@@ -119,12 +159,64 @@ interface Item {
  * because a control that replaces the Notes subgrid and silently drops half of
  * what is on the record leaves the user unable to tell "no more notes" from
  * "this control hid them".
+ *
+ * **0.2.0 adds the other direction.** Files dropped on the list, or picked
+ * through *Add files*, become Note rows through `webAPI.createRecord` — bare
+ * base64 in `documentbody`, the name and MIME type beside it, and an
+ * `@odata.bind` to the record the subgrid sits on. The two names that bind
+ * needs are read from `EntityDefinitions`, not derived, and the ceiling a
+ * file is refused against is the organisation's own unless the maker set one.
+ * The button is drawn only where the host can perform the write: an editable
+ * model-driven form, with a parent record, on a host that granted the Web API.
+ * Everywhere else the list is exactly what 0.1.x was.
  */
 export class AttachmentList implements ComponentFramework.StandardControl<IInputs, IOutputs> {
     private container!: HTMLDivElement;
     private status!: HTMLParagraphElement;
 
     private notifyOutputChanged!: () => void;
+
+    /** The Note most recently created. `''` rather than `undefined`, as above. */
+    private uploadedRecordId = '';
+
+    /**
+     * Files waiting to be attached, in the order they arrived.
+     *
+     * One at a time, on purpose: a base64 body is a third larger than the file
+     * and lives in memory until the create resolves, and ten parallel creates
+     * against one record is how a subgrid gets ten refreshes. The queue is
+     * drained by `drain`, and a drop while it is running joins the end.
+     */
+    private queue: File[] = [];
+    private draining = false;
+
+    /** The read in flight, which `destroy()` owes an `abort()`. */
+    private reader: FileReader | null = null;
+
+    /**
+     * `dragenter`/`dragleave` fire for every child the cursor crosses, so a
+     * flag flickers off while still over the list. A depth counter is the
+     * standard fix and the only one that works.
+     */
+    private dragDepth = 0;
+
+    /** The organisation's attachment ceiling in bytes, fetched once; `null` when it could not be read. */
+    private ceiling: Promise<number | null> | null = null;
+
+    /** The bind names per parent table, fetched once each. */
+    private binds = new Map<string, Promise<Bind>>();
+
+    /** The hidden file input the *Add files* button opens. */
+    private picker: HTMLInputElement | null = null;
+
+    /**
+     * The context most recently handed down, for the upload that runs after
+     * the render that started it. **Never the dataset**: `parameters.records`
+     * is a new object every pass, and one kept from an earlier `updateView` is
+     * a dead snapshot (`pcf-data-table` 0.5.0 measured it), so the queue reads
+     * `this.latest.parameters.records` at the moment it needs it.
+     */
+    private latest!: ComponentFramework.Context<IInputs>;
 
     /**
      * The row most recently asked for.
@@ -188,9 +280,25 @@ export class AttachmentList implements ComponentFramework.StandardControl<IInput
          */
         this.status.setAttribute('role', 'status');
         this.status.setAttribute('aria-live', 'polite');
+
+        /*
+         * The whole control is the drop target, and the listeners go on the
+         * container the platform hands over rather than on anything rendered,
+         * because `render` empties the container on every pass and a listener
+         * on a child would go with it. Taken in `init`, released in `destroy`.
+         *
+         * `dragover` MUST call `preventDefault()` or `drop` never fires at all
+         * — silently, with a no-entry cursor and nothing in the console. The
+         * most common reason a drop target does nothing.
+         */
+        this.container.addEventListener('dragenter', this.onDragEnter);
+        this.container.addEventListener('dragover', this.onDragOver);
+        this.container.addEventListener('dragleave', this.onDragLeave);
+        this.container.addEventListener('drop', this.onDrop);
     }
 
     public updateView(context: ComponentFramework.Context<IInputs>): void {
+        this.latest = context;
 
         this.applyTheme(context);
         this.applyPageSize(context, context.parameters.records);
@@ -209,12 +317,27 @@ export class AttachmentList implements ComponentFramework.StandardControl<IInput
     }
 
     public getOutputs(): IOutputs {
-        return { downloadedRecordId: this.downloadedRecordId };
+        return {
+            downloadedRecordId: this.downloadedRecordId,
+            uploadedRecordId: this.uploadedRecordId,
+        };
     }
 
     public destroy(): void {
         this.disposed = true;
         this.pending = '';
+
+        // A read still in flight would call back into a container the
+        // platform has thrown away. The queue behind it is simply dropped:
+        // there is nothing to attach the rest to any more.
+        this.reader?.abort();
+        this.reader = null;
+        this.queue = [];
+
+        this.container.removeEventListener('dragenter', this.onDragEnter);
+        this.container.removeEventListener('dragover', this.onDragOver);
+        this.container.removeEventListener('dragleave', this.onDragLeave);
+        this.container.removeEventListener('drop', this.onDrop);
 
         // Listeners are on elements inside `container`, which the platform
         // removes — but the container itself is reused, so clear it.
@@ -351,6 +474,18 @@ export class AttachmentList implements ComponentFramework.StandardControl<IInput
         const hideNotes = asBoolean(context.parameters.hideTextNotes.raw, false);
         const items = hideNotes ? all.filter((item) => item.isFile) : all;
 
+        /*
+         * Above the list, and above the empty state too: a record with no
+         * attachments yet is exactly where the button earns its place. Drawn
+         * only where the host can perform the write — see `uploadHost` — so on
+         * canvas, on a main grid and on a read-only form this line is nothing.
+         */
+        const toolbar = this.toolbar(context, getString);
+
+        if (toolbar) {
+            this.container.appendChild(toolbar);
+        }
+
         if (items.length === 0) {
             /*
              * Three different facts, and they are not interchangeable. Loading
@@ -366,6 +501,9 @@ export class AttachmentList implements ComponentFramework.StandardControl<IInput
                       ? getString('AttachmentList_NoFiles')
                       : getString('AttachmentList_Empty'),
             );
+            // The live region has to be on the page for an upload's progress
+            // to be heard, and an empty record is where uploads start.
+            this.container.appendChild(this.status);
             return;
         }
 
@@ -756,6 +894,567 @@ export class AttachmentList implements ComponentFramework.StandardControl<IInput
         );
     }
 
+    /* ---------------------------------------------------------- upload */
+
+    /**
+     * The three host surfaces an upload needs, or `null` if any is missing —
+     * and `null` on a read-only form, where the platform's own New button is
+     * gone too.
+     *
+     * Each is detected on its own, because each goes missing on its own:
+     * `webAPI` on canvas and on a host that withheld the feature, `contextInfo`
+     * on a main grid (there is no record to attach to), `page.getClientUrl`
+     * on canvas and the hub's harness. The `Xrm` global is the fallback for
+     * the client URL, never the preference — same as `pcf-data-table`.
+     *
+     * The parent's id is unbraced and lower-cased whatever arrived, because
+     * `contextInfo` was measured unbraced (`pcf-data-table` 0.4.0) and a
+     * dialog's GUID braced and upper-case, and the bind value takes bare.
+     */
+    private static uploadHost(context: ComponentFramework.Context<IInputs>): UploadHost | null {
+        const loose = context as {
+            webAPI?: { createRecord?: unknown };
+            mode?: { contextInfo?: unknown; isControlDisabled?: boolean };
+            page?: { getClientUrl?: unknown };
+        };
+
+        if (loose.mode?.isControlDisabled) {
+            return null;
+        }
+
+        const create = loose.webAPI?.createRecord;
+        const info = loose.mode?.contextInfo as Partial<Parent> | null | undefined;
+        const fromPage =
+            typeof loose.page?.getClientUrl === 'function'
+                ? (loose.page.getClientUrl as () => unknown)()
+                : undefined;
+        const fromGlobal = (
+            globalThis as {
+                Xrm?: { Utility?: { getGlobalContext?: () => { getClientUrl?: () => unknown } } };
+            }
+        ).Xrm?.Utility?.getGlobalContext?.()?.getClientUrl?.();
+        const clientUrl = [fromPage, fromGlobal].find(
+            (url): url is string => typeof url === 'string' && url !== '',
+        );
+
+        if (
+            typeof create !== 'function'
+            || !info
+            || typeof info.entityTypeName !== 'string'
+            || !LOGICAL_NAME.test(info.entityTypeName)
+            || typeof info.entityId !== 'string'
+            || info.entityId === ''
+            || !clientUrl
+        ) {
+            return null;
+        }
+
+        return {
+            parent: {
+                entityTypeName: info.entityTypeName,
+                entityId: info.entityId.replace(/[{}]/g, '').toLowerCase(),
+            },
+            clientUrl: clientUrl.replace(/\/$/, ''),
+            create: (create as UploadHost['create']).bind(loose.webAPI),
+        };
+    }
+
+    /** The host can, and the maker did not say no. */
+    private canUpload(context: ComponentFramework.Context<IInputs>): boolean {
+        return !asBoolean(context.parameters.hideUpload.raw, false) && AttachmentList.uploadHost(context) !== null;
+    }
+
+    /**
+     * *Add files* and the input behind it, or nothing at all.
+     *
+     * A real `<input type="file">` rather than `device.pickFile`, on purpose:
+     * every host with a DOM has one, on a phone it opens the same camera roll
+     * the device API would — with the full `accept` rule rather than three
+     * words — and it costs no install-time prompt. It is hidden with the
+     * attribute, not moved off-screen, so the button is the only thing in the
+     * tab order; the input itself is never focused.
+     */
+    private toolbar(
+        context: ComponentFramework.Context<IInputs>,
+        getString: (id: string) => string,
+    ): HTMLElement | null {
+        if (!this.canUpload(context)) {
+            this.picker = null;
+            return null;
+        }
+
+        const bar = document.createElement('div');
+        bar.className = 'AttachmentList-toolbar';
+
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.multiple = true;
+        input.className = 'AttachmentList-picker';
+        input.setAttribute('hidden', '');
+        input.tabIndex = -1;
+
+        const accept = (context.parameters.accept.raw ?? '').trim();
+
+        if (accept !== '') {
+            input.setAttribute('accept', accept);
+        }
+
+        input.addEventListener('change', () => {
+            const files = Array.from(input.files ?? []);
+
+            // Cleared so the same file can be picked twice in a row: `change`
+            // does not fire when the selection is unchanged.
+            input.value = '';
+            this.enqueue(files);
+        });
+
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'AttachmentList-add';
+        button.appendChild(createIcon('add'));
+        button.appendChild(document.createTextNode(getString('AttachmentList_AddFiles')));
+        button.addEventListener('click', () => {
+            input.click();
+        });
+
+        const hint = document.createElement('span');
+        hint.className = 'AttachmentList-dropHint';
+        hint.textContent = getString('AttachmentList_DropHint');
+
+        bar.append(button, input, hint);
+        this.picker = input;
+
+        return bar;
+    }
+
+    /**
+     * The four drag events, as arrow properties so the same reference can be
+     * removed in `destroy`.
+     *
+     * **`dragover` and `drop` are prevented whether or not this host can
+     * upload.** Left to the browser, a file dropped on the list navigates the
+     * frame to the file — and a model-driven form is an iframe the user then
+     * loses. The host's inability is reported in words on the drop instead.
+     */
+    private readonly onDragEnter = (event: DragEvent): void => {
+        if (!carriesFiles(event)) {
+            return;
+        }
+
+        event.preventDefault();
+        this.dragDepth += 1;
+
+        if (this.latest && this.canUpload(this.latest)) {
+            this.container.classList.add('AttachmentList--dragging');
+        }
+    };
+
+    private readonly onDragOver = (event: DragEvent): void => {
+        if (!carriesFiles(event)) {
+            return;
+        }
+
+        event.preventDefault();
+
+        if (event.dataTransfer) {
+            event.dataTransfer.dropEffect = this.latest && this.canUpload(this.latest) ? 'copy' : 'none';
+        }
+    };
+
+    private readonly onDragLeave = (): void => {
+        if (this.dragDepth === 0) {
+            return;
+        }
+
+        this.dragDepth -= 1;
+
+        if (this.dragDepth === 0) {
+            this.container.classList.remove('AttachmentList--dragging');
+        }
+    };
+
+    private readonly onDrop = (event: DragEvent): void => {
+        this.dragDepth = 0;
+        this.container.classList.remove('AttachmentList--dragging');
+
+        if (!carriesFiles(event)) {
+            return;
+        }
+
+        event.preventDefault();
+        this.enqueue(Array.from(event.dataTransfer?.files ?? []));
+    };
+
+    /**
+     * Files arrive here from either route and join one queue.
+     *
+     * The maker's veto is silent — a list configured to read only should not
+     * lecture about it — and the host's inability is said once, because the
+     * user just did something and nothing happened.
+     */
+    private enqueue(files: File[]): void {
+        const context = this.latest;
+
+        if (files.length === 0 || !context || asBoolean(context.parameters.hideUpload.raw, false)) {
+            return;
+        }
+
+        if (!AttachmentList.uploadHost(context)) {
+            this.announce(context.resources.getString('AttachmentList_UploadUnavailable'));
+            return;
+        }
+
+        this.queue.push(...files);
+        void this.drain();
+    }
+
+    /**
+     * One file at a time, then one refresh.
+     *
+     * Sequential because a base64 body is a third larger than the file and
+     * lives in memory until its create resolves, and because ten parallel
+     * creates against one record is how a subgrid gets ten refreshes. A drop
+     * while this is running joins the end of the queue and is counted in the
+     * progress line. The refresh is asked for once, at the end, and only if
+     * something was created — `refresh()` fires `updateView` and is a round
+     * trip in its own right.
+     *
+     * Problems are collected rather than announced as they happen: the live
+     * region holds one string, and a failure announced mid-batch would be
+     * replaced by the next file's progress before anybody heard it.
+     */
+    private async drain(): Promise<void> {
+        if (this.draining) {
+            return;
+        }
+
+        this.draining = true;
+
+        const problems: string[] = [];
+        let attached = 0;
+        let lastName = '';
+        let index = 0;
+
+        try {
+            while (this.queue.length > 0 && !this.disposed) {
+                const file = this.queue.shift() as File;
+
+                index += 1;
+
+                if (await this.attach(file, index, index + this.queue.length, problems)) {
+                    attached += 1;
+                    lastName = file.name;
+                }
+            }
+
+            if (this.disposed) {
+                return;
+            }
+
+            const getString = (id: string): string => this.latest.resources.getString(id);
+            const summary =
+                attached === 1
+                    ? getString('AttachmentList_UploadedOne').replace('{0}', lastName)
+                    : attached > 1
+                      ? getString('AttachmentList_UploadedMany').replace('{0}', String(attached))
+                      : '';
+
+            this.announce([summary, ...problems].filter((line) => line !== '').join(' '));
+
+            if (attached > 0) {
+                this.latest.parameters.records.refresh();
+            }
+        } finally {
+            this.draining = false;
+        }
+    }
+
+    /**
+     * The round trip for one file. `true` if a Note now exists for it.
+     *
+     * The order is the point. Everything that can refuse the file does so
+     * **before** it is read: a zero-byte file, a type the maker excluded, a
+     * size over the ceiling — each on numbers the browser already has. The
+     * metadata reads come next, cached after the first file, so a failure
+     * there costs nothing that was encoded. Only then is the file read into a
+     * base64 string, and only then sent.
+     *
+     * Read against the *latest* context each time: a batch of five outlives
+     * several `updateView` passes, and a dataset kept from the first is a dead
+     * snapshot.
+     */
+    private async attach(file: File, index: number, total: number, problems: string[]): Promise<boolean> {
+        const context = this.latest;
+        const getString = (id: string): string => context.resources.getString(id);
+        const host = AttachmentList.uploadHost(context);
+
+        this.announce(
+            getString('AttachmentList_Uploading')
+                .replace('{0}', String(index))
+                .replace('{1}', String(total))
+                .replace('{2}', file.name),
+        );
+
+        if (!host) {
+            problems.push(getString('AttachmentList_UploadUnavailable'));
+            return false;
+        }
+
+        if (file.size === 0) {
+            problems.push(getString('AttachmentList_UploadEmpty').replace('{0}', file.name));
+            return false;
+        }
+
+        if (!accepts(file, context.parameters.accept.raw)) {
+            problems.push(getString('AttachmentList_UploadRejectedType').replace('{0}', file.name));
+            return false;
+        }
+
+        try {
+            const ceiling = await this.ceilingFor(context);
+
+            if (this.disposed) {
+                return false;
+            }
+
+            if (ceiling !== null && file.size > ceiling) {
+                problems.push(
+                    getString('AttachmentList_UploadTooLarge')
+                        .replace('{0}', file.name)
+                        .replace('{1}', String(Math.max(1, Math.floor(ceiling / MB)))),
+                );
+                return false;
+            }
+
+            const dataset = context.parameters.records;
+            const entity = dataset.getTargetEntityType();
+
+            if (!LOGICAL_NAME.test(entity)) {
+                throw new Error(`Cannot attach to ${entity}.`);
+            }
+
+            const nameColumn = this.writeColumn(dataset, 'fileName', entity);
+
+            if (!nameColumn) {
+                // A custom attachment table with no file-name role mapped has
+                // nowhere to put the name, and a file without one is a text
+                // note that happens to have a body.
+                throw new Error(getString('AttachmentList_NoFileNameColumn'));
+            }
+
+            const bind = await this.bindFor(host, entity, host.parent.entityTypeName);
+            const body = await this.read(file);
+
+            if (this.disposed) {
+                return false;
+            }
+
+            const data: Record<string, unknown> = {
+                [nameColumn]: file.name,
+                [this.bodyColumn(context)]: body,
+                [`${bind.navigationProperty}@odata.bind`]: `/${bind.entitySet}(${host.parent.entityId})`,
+            };
+            const mimeColumn = this.writeColumn(dataset, 'mimeType', entity);
+            const isDocumentColumn = this.writeColumn(dataset, 'isDocument', entity);
+
+            if (mimeColumn) {
+                data[mimeColumn] = file.type !== '' ? file.type : FALLBACK_MIME;
+            }
+
+            if (isDocumentColumn) {
+                data[isDocumentColumn] = true;
+            }
+
+            const created = await host.create(entity, data);
+
+            if (this.disposed) {
+                return false;
+            }
+
+            this.uploadedRecordId = typeof created?.id === 'string' ? created.id.replace(/[{}]/g, '') : '';
+            this.notifyOutputChanged();
+
+            return true;
+        } catch (error) {
+            if (!this.disposed) {
+                problems.push(
+                    getString('AttachmentList_UploadFailed')
+                        .replace('{0}', file.name)
+                        .replace('{1}', describeError(error)),
+                );
+            }
+
+            return false;
+        }
+    }
+
+    /**
+     * Where a value is written: the mapped role, else the column the view
+     * carries, else — **on the annotation table only** — the logical name.
+     * A custom attachment table whose role is unmapped gets no key, because
+     * a column it does not have fails the whole create.
+     */
+    private writeColumn(dataset: DataSet, key: ColumnKey, entity: string): string | null {
+        const column = this.column(dataset, key);
+
+        if (column) {
+            return column.name;
+        }
+
+        return entity === 'annotation' ? COLUMNS[key].logical : null;
+    }
+
+    /**
+     * The ceiling in bytes, or `null` to leave the refusal to the server.
+     *
+     * The maker's number wins when set. Unset, the organisation's own
+     * `maxuploadfilesize` is read once through the Web API — it is the number
+     * Dataverse will enforce on the create, so refusing against anything else
+     * is either too strict or a wasted round trip. A read that fails answers
+     * `null` rather than the 5 MB default: an admin who raised the limit
+     * should not be told their file is too big by a control that could not
+     * find out.
+     */
+    private ceilingFor(context: ComponentFramework.Context<IInputs>): Promise<number | null> {
+        const raw = context.parameters.maxUploadSizeMb.raw;
+
+        if (typeof raw === 'number' && raw > 0) {
+            return Promise.resolve(Math.trunc(raw) * MB);
+        }
+
+        if (this.ceiling) {
+            return this.ceiling;
+        }
+
+        const query = (context as { webAPI?: { retrieveMultipleRecords?: unknown } }).webAPI?.retrieveMultipleRecords;
+
+        if (typeof query !== 'function') {
+            return Promise.resolve(null);
+        }
+
+        this.ceiling = (query as (entity: string, options: string) => Promise<{ entities?: unknown[] }>)
+            .call(context.webAPI, 'organization', '?$select=maxuploadfilesize&$top=1')
+            .then((result) => {
+                const first = result?.entities?.[0] as { maxuploadfilesize?: unknown } | undefined;
+                const bytes = first?.maxuploadfilesize;
+
+                return typeof bytes === 'number' && bytes > 0 ? bytes : DEFAULT_UPLOAD_CEILING;
+            })
+            .catch(() => null);
+
+        return this.ceiling;
+    }
+
+    /**
+     * The navigation property and entity set a bind needs, read from
+     * `EntityDefinitions` — two same-origin fetches, cached per table pair.
+     *
+     * `context.webAPI` cannot address metadata entities, and
+     * `utils.getEntityMetadata` would cost a second install-time prompt for
+     * one string. A same-origin fetch needs neither; `pcf-data-table` 0.5.0
+     * measured it at 84 ms. The relationship is found by `ReferencedEntity`
+     * because `objectid` is polymorphic — one relationship per table that has
+     * Notes — and the first match is taken.
+     */
+    private bindFor(host: UploadHost, entity: string, parent: string): Promise<Bind> {
+        const key = `${entity}|${parent}`;
+        const cached = this.binds.get(key);
+
+        if (cached) {
+            return cached;
+        }
+
+        const headers = {
+            Accept: 'application/json',
+            'OData-MaxVersion': '4.0',
+            'OData-Version': '4.0',
+        };
+        const base = `${host.clientUrl}/api/data/v9.2/EntityDefinitions(LogicalName='`;
+        const relationships = fetch(
+            `${base}${entity}')/ManyToOneRelationships?$select=ReferencedEntity,ReferencingEntityNavigationPropertyName`,
+            { headers, credentials: 'same-origin' },
+        ).then((response) => {
+            if (!response.ok) {
+                throw new Error(`Relationships for ${entity} could not be read (${response.status}).`);
+            }
+
+            return response.json();
+        });
+        const definition = fetch(`${base}${parent}')?$select=EntitySetName`, {
+            headers,
+            credentials: 'same-origin',
+        }).then((response) => {
+            if (!response.ok) {
+                throw new Error(`${parent} could not be read (${response.status}).`);
+            }
+
+            return response.json();
+        });
+
+        const bind = Promise.all([relationships, definition]).then(([related, table]) => {
+            const rows = Array.isArray((related as { value?: unknown })?.value)
+                ? ((related as { value: unknown[] }).value as Array<Record<string, unknown>>)
+                : [];
+            const match = rows.find(
+                (row) => row.ReferencedEntity === parent && typeof row.ReferencingEntityNavigationPropertyName === 'string',
+            );
+            const entitySet = (table as { EntitySetName?: unknown })?.EntitySetName;
+
+            if (!match) {
+                throw new Error(`${entity} has no lookup to ${parent}.`);
+            }
+
+            if (typeof entitySet !== 'string' || entitySet === '') {
+                throw new Error(`No entity set name for ${parent}.`);
+            }
+
+            return { navigationProperty: match.ReferencingEntityNavigationPropertyName as string, entitySet };
+        });
+
+        // A failed read is not cached: the next file asks again, which is the
+        // right behaviour for a network blip and harmless for a real refusal.
+        this.binds.set(key, bind);
+        bind.catch(() => {
+            this.binds.delete(key);
+        });
+
+        return bind;
+    }
+
+    /**
+     * The file's bytes as bare base64 — the `data:` prefix stripped, because
+     * `documentbody` holds base64 and nothing else. The opposite of
+     * `pcf-file-drop`, which keeps the whole data URL for a text column.
+     *
+     * `readAsDataURL` rather than `arrayBuffer` + `btoa`: the reader is
+     * abortable, which is what `destroy` needs from a read still in flight.
+     */
+    private read(file: File): Promise<string> {
+        this.reader?.abort();
+
+        return new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+
+            this.reader = reader;
+            reader.onload = () => {
+                const result = typeof reader.result === 'string' ? reader.result : '';
+                const comma = result.indexOf(',');
+
+                this.reader = null;
+                resolve(comma >= 0 ? result.slice(comma + 1) : result);
+            };
+            reader.onerror = () => {
+                this.reader = null;
+                reject(reader.error ?? new Error('The file could not be read.'));
+            };
+            reader.onabort = () => {
+                this.reader = null;
+                reject(new Error('The read was cancelled.'));
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
     /**
      * The body column's logical name, validated because it is interpolated into
      * a query string.
@@ -1020,6 +1719,55 @@ function describeError(error: unknown): string {
 }
 
 /**
+ * Whether a drag carries files rather than text or a link.
+ *
+ * `types` is read instead of `files` because during `dragenter`/`dragover`
+ * the browser withholds the files themselves — `files` is empty until the
+ * drop — and `types` is the only thing that says what is coming.
+ */
+function carriesFiles(event: DragEvent): boolean {
+    const types = event.dataTransfer?.types;
+
+    return types ? Array.from(types).includes('Files') : false;
+}
+
+/**
+ * The HTML `accept` rule, applied by hand.
+ *
+ * The file input already narrows the picker with it, but a drop bypasses the
+ * picker entirely and a browser's own filter is a suggestion rather than a
+ * rule. Three token shapes, like the attribute: `.pdf` against the name,
+ * `image/*` against the type's family, `application/pdf` against the whole
+ * type. Empty allows everything; a token in none of those shapes matches
+ * nothing, which is the safe way to be wrong.
+ */
+function accepts(file: File, accept: string | null | undefined): boolean {
+    const tokens = (accept ?? '')
+        .split(',')
+        .map((token) => token.trim().toLowerCase())
+        .filter((token) => token !== '');
+
+    if (tokens.length === 0) {
+        return true;
+    }
+
+    const name = file.name.toLowerCase();
+    const type = file.type.toLowerCase();
+
+    return tokens.some((token) => {
+        if (token.startsWith('.')) {
+            return name.endsWith(token);
+        }
+
+        if (token.endsWith('/*')) {
+            return type.startsWith(token.slice(0, -1));
+        }
+
+        return type === token;
+    });
+}
+
+/**
  * Which of the four glyphs a file gets.
  *
  * The MIME type first, because it is what the row declares; the extension only
@@ -1054,6 +1802,9 @@ function iconFor(mimeType: string, fileName: string): IconName {
     return 'document';
 }
 
+/** The add glyph — Fluent's `Add20Regular` — on the same 20×20 grid as the file icons. */
+const ADD_PATH = 'M10 2.5a.5.5 0 0 0-1 0V9H2.5a.5.5 0 0 0 0 1H9v6.5a.5.5 0 0 0 1 0V10h6.5a.5.5 0 0 0 0-1H10z';
+
 /** The download glyph, on the same 20×20 grid as the file icons. */
 const DOWNLOAD_PATH =
     'M10 2.5a.5.5 0 0 1 .5.5v9.79l3.15-3.14a.5.5 0 0 1 .7.7l-4 4a.5.5 0 0 1-.7 0l-4-4a.5.5 0 1 1 .7-.7l3.15 3.14V3a.5.5 0 0 1 .5-.5M4 15.5a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5';
@@ -1067,7 +1818,7 @@ const DOWNLOAD_PATH =
  * on a dark background. pcf-file-drop shipped exactly that and it was found on a
  * real form rather than in review.
  */
-function createIcon(name: IconName | 'download'): SVGSVGElement {
+function createIcon(name: IconName | 'download' | 'add'): SVGSVGElement {
     const svg = document.createElementNS(SVG_NS, 'svg') as SVGSVGElement;
 
     // `className` on an SVG element is a read-only `SVGAnimatedString`;
@@ -1075,9 +1826,11 @@ function createIcon(name: IconName | 'download'): SVGSVGElement {
     // A modifier per glyph, so the stylesheet can tint a picture differently
     // from a document if it ever wants to — and so an assertion can name which
     // glyph a row got without reading path data.
-    svg.classList.add(name === 'download' ? 'AttachmentList-glyph' : 'AttachmentList-icon');
+    const isGlyph = name === 'download' || name === 'add';
 
-    if (name !== 'download') {
+    svg.classList.add(isGlyph ? 'AttachmentList-glyph' : 'AttachmentList-icon');
+
+    if (!isGlyph) {
         svg.classList.add('AttachmentList-icon--' + name);
     }
     svg.setAttribute('viewBox', '0 0 20 20');
@@ -1086,7 +1839,7 @@ function createIcon(name: IconName | 'download'): SVGSVGElement {
 
     const path = document.createElementNS(SVG_NS, 'path');
 
-    path.setAttribute('d', name === 'download' ? DOWNLOAD_PATH : ICON_PATHS[name]);
+    path.setAttribute('d', name === 'download' ? DOWNLOAD_PATH : name === 'add' ? ADD_PATH : ICON_PATHS[name]);
     path.setAttribute('fill', 'currentColor');
     svg.appendChild(path);
 

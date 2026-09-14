@@ -97,6 +97,18 @@
                 font-size: 12px;
             }
 
+            .harness-controls textarea {
+                font-family: 'Cascadia Mono', Consolas, monospace;
+                font-size: 12px;
+                resize: vertical;
+            }
+
+            /* An unparseable inputs bag, said in the one place you are looking. */
+            .harness-controls textarea.is-bad {
+                border-color: #a4262c;
+                outline: 1px solid #a4262c;
+            }
+
             .harness-group {
                 grid-column: 1 / -1;
                 margin: 4px 0 0;
@@ -161,8 +173,10 @@
             A stand-in for a Notes subgrid. Run <code>npm run build</code> first;
             reload after every build. <strong>This page is the only place the
             list can be looked at</strong> — and the call log below is the only
-            place the download round trip is visible, since nothing here saves a
-            file.
+            place the download and upload round trips are visible, since nothing
+            here saves a file or holds one. Drop files onto the list, or press
+            <em>Add files</em>: the create goes to the rig's <code>webAPI</code>
+            and the row arrives on the refresh the control asks for.
         </p>
 
         <div class="harness-controls">
@@ -179,23 +193,6 @@
                 Page size
                 <input type="number" id="harness-pagesize" value="5" min="1" max="250" />
                 <span>10 records in the fixture, 8 of them files.</span>
-            </label>
-
-            <label>
-                Body column
-                <input type="text" id="harness-bodycolumn" value="documentbody" />
-                <span>Anything that is not a logical name falls back.</span>
-            </label>
-
-            <label>
-                Maximum download (MB)
-                <input type="number" id="harness-maxsize" value="32" min="1" max="128" />
-                <span>One fixture row is 40 MB.</span>
-            </label>
-
-            <label class="is-switch">
-                <input type="checkbox" id="harness-hidenotes" />
-                Hide text notes
             </label>
 
             <label>
@@ -242,20 +239,19 @@
                 Right-to-left
             </label>
 
-            <p class="harness-group">
-                What the host may not give you. Turning either of these off is
-                what a canvas app looks like: the list still renders, and the
-                download declines in words rather than silently.
-            </p>
-
             <label class="is-switch">
-                <input type="checkbox" id="harness-webapi" checked />
-                context.webAPI exists
+                <input type="checkbox" id="harness-disabled" />
+                Disabled (read-only form)
             </label>
 
-            <label class="is-switch">
-                <input type="checkbox" id="harness-openfile" checked />
-                navigation.openFile exists
+            <label>
+                Where the subgrid sits
+                <select id="harness-contextinfo">
+                    <option value="form">A form — the parent record is known</option>
+                    <option value="none">A main grid — no parent record</option>
+                </select>
+                <span><code>mode.contextInfo</code> is what an upload attaches
+                to. Without it there is nothing to attach to.</span>
             </label>
 
             <p class="harness-group">
@@ -290,8 +286,71 @@
             </label>
 
             <label class="is-switch">
+                <input type="checkbox" id="harness-nofiltering" />
+                dataset.filtering is undefined
+            </label>
+
+            <label class="is-switch">
+                <input type="checkbox" id="harness-addcolumn" checked />
+                dataset.addColumn exists
+            </label>
+
+            <label class="is-switch">
+                <input type="checkbox" id="harness-fullscreen" checked />
+                mode.setFullScreen exists
+            </label>
+
+            <label class="is-switch">
                 <input type="checkbox" id="harness-noheight" />
                 allocatedHeight stays -1 (main grid)
+            </label>
+
+            <p class="harness-group">
+                What the host withholds. Each of these is absent on some real
+                host, and each is absent independently — which is the point:
+                a control that checks the bag once and then calls four methods
+                through it passes here and throws there.
+            </p>
+
+            <label class="is-switch">
+                <input type="checkbox" id="harness-webapi" checked />
+                context.webAPI exists
+            </label>
+
+            <label class="is-switch">
+                <input type="checkbox" id="harness-webapifails" />
+                webAPI writes reject
+            </label>
+
+            <label class="is-switch">
+                <input type="checkbox" id="harness-navigation" checked />
+                context.navigation exists
+            </label>
+
+            <label class="is-switch">
+                <input type="checkbox" id="harness-openfile" checked />
+                navigation.openFile exists
+            </label>
+
+            <label>
+                Platform dialogs
+                <select id="harness-dialogs">
+                    <option value="confirmed">Confirm → confirmed</option>
+                    <option value="cancelled">Confirm → cancelled</option>
+                    <option value="rejected">Dialogs reject</option>
+                    <option value="absent">No dialogs (canvas)</option>
+                </select>
+                <span>A cancel <strong>resolves</strong>, with
+                <code>{ confirmed: false }</code>.</span>
+            </label>
+
+            <label>
+                Input properties
+                <textarea id="harness-inputs" rows="4" spellcheck="false">{ "bodyColumn": "documentbody", "hideTextNotes": false, "maxDownloadSizeMb": 32, "hideUpload": false, "accept": "", "maxUploadSizeMb": null }</textarea>
+                <span>JSON, merged into <code>parameters</code> as
+                <code>{ raw }</code>. Seed the manifest's own
+                <code>default-value</code>s here — the platform supplies them
+                and this rig does not.</span>
             </label>
         </div>
 
@@ -301,14 +360,6 @@
         </div>
 
         <h2>What the control asked the platform to do</h2>
-        <p class="harness-note">
-            A download is two calls and their order matters:
-            <code>notifyOutputChanged</code> first, so a canvas app sees the
-            press at all, then <code>webAPI.retrieveRecord</code> for the one
-            column the list does not have, then
-            <code>navigation.openFile</code> with the size in KB. Nothing here
-            saves a file; the log is the whole of it.
-        </p>
         <pre class="harness-log" id="harness-calls"></pre>
 
         <p class="harness-note" id="harness-status"></p>

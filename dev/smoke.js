@@ -73,7 +73,7 @@ function check(label, ok, detail) {
 const marked = (key) => `resx:${key}`;
 
 /**
- * The five strings that carry `{0}` placeholders, repeated here as shapes.
+ * The strings that carry placeholders, repeated here as shapes.
  *
  * A marked key has no placeholders in it, so a control doing the substitution
  * and one doing nothing at all produce the same string. These are the token
@@ -87,6 +87,13 @@ const TEMPLATES = {
     AttachmentList_DownloadFailed: 'The download failed. {0}',
     AttachmentList_NoContent: '{0} has no file to download.',
     AttachmentList_TooLarge: 'Larger than the {0} MB limit.',
+    AttachmentList_Uploading: 'Attaching {0} of {1}: {2}…',
+    AttachmentList_UploadedOne: 'Attached {0}.',
+    AttachmentList_UploadedMany: 'Attached {0} files.',
+    AttachmentList_UploadFailed: '{0} could not be attached. {1}',
+    AttachmentList_UploadTooLarge: '{0} is larger than the {1} MB limit and was not attached.',
+    AttachmentList_UploadRejectedType: '{0} is not an allowed file type and was not attached.',
+    AttachmentList_UploadEmpty: '{0} is empty and was not attached.',
 };
 
 const speaks = (key) => (TEMPLATES[key] !== undefined ? TEMPLATES[key] : marked(key));
@@ -104,6 +111,11 @@ const MANIFEST_DEFAULTS = {
     bodyColumn: 'documentbody',
     hideTextNotes: false,
     maxDownloadSizeMb: 32,
+    hideUpload: false,
+    accept: '',
+    // No default-value, so the platform hands over `raw: null` — unset is a
+    // value, not an absence. `pageSize` is the rig's own and seeded by it.
+    maxUploadSizeMb: null,
 };
 
 const live = [];
@@ -615,6 +627,371 @@ void (async function downloads() {
         'refuses to put a maker’s typo into a query string',
         lastCall(misspelled, 'webAPI.retrieveRecord').indexOf('?$select=documentbody') !== -1,
         lastCall(misspelled, 'webAPI.retrieveRecord'),
+    );
+
+    /* ------------------------------------------------------------ upload */
+
+    /*
+     * The other direction, and the half of 0.2.0 that leaves the browser.
+     *
+     * Every value below is the rig's: `createRecord` resolves an id and holds
+     * the row until the next fetch, `EntityDefinitions` answers from the
+     * fixture, the organisation's ceiling is a number in `fixture.tables`.
+     * What the suite can prove is the control's *decisions* — what it refused
+     * before reading, what it wrote and under which key, whether it asked for
+     * the refresh — and not that a real Dataverse accepts the payload. That is
+     * SPEC.md's *Not verified*.
+     */
+
+    const PARENT = { entityTypeName: 'account', entityId: 'a1', entityRecordName: 'Contoso Ltd' };
+    const BYTES = 'Hello, attachment.';
+    const B64 = Buffer.from(BYTES).toString('base64');
+
+    const file = (name, type = 'text/plain', content = BYTES) => new File([content], name, { type });
+    const big = (name, megabytes, type = 'application/zip') =>
+        new File([new Uint8Array(megabytes * 1024 * 1024)], name, { type });
+
+    /** A drop, as the browser dispatches it: `types` says Files, `files` holds them. */
+    function drop(view, files) {
+        let prevented = false;
+
+        view.container.dispatchEvent({
+            type: 'drop',
+            preventDefault: () => {
+                prevented = true;
+            },
+            dataTransfer: { types: ['Files'], files },
+        });
+
+        return () => prevented;
+    }
+
+    /** Enough turns for a read, two fetches and a create to run out. */
+    async function drained() {
+        for (let i = 0; i < 12; i += 1) {
+            await settled();
+        }
+    }
+
+    const creates = (view) => view.calls().filter((call) => call.indexOf('webAPI.createRecord') === 0);
+    const fetches = (view) => view.calls().filter((call) => call.indexOf('fetch') === 0);
+    const refreshes = (view) => view.calls().filter((call) => call === 'refresh');
+
+    check(
+        'no parent record, no Add files: a main grid has nothing to attach to',
+        bind().find('.AttachmentList-add') === null,
+    );
+
+    check(
+        'and none on canvas, which has no Web API to create with',
+        bind({ host: 'canvas', contextInfo: PARENT }).find('.AttachmentList-add') === null,
+    );
+
+    check(
+        'and none on a read-only form, where the platform’s own New is gone too',
+        bind({ contextInfo: PARENT, disabled: true }).find('.AttachmentList-add') === null,
+    );
+
+    check(
+        'and none when the maker said hideUpload',
+        bind({ contextInfo: PARENT, inputs: { hideUpload: true } }).find('.AttachmentList-add') === null,
+    );
+
+    const uploader = bind({ getString: speaks, contextInfo: PARENT });
+
+    check(
+        'an editable form with a parent record draws Add files above the list',
+        uploader.find('.AttachmentList-add') !== null && uploader.find('.AttachmentList-toolbar') !== null,
+    );
+
+    check(
+        'and draws it above the empty state too — that is where uploads start',
+        bind({ contextInfo: PARENT, records: [] }).find('.AttachmentList-add') !== null,
+    );
+
+    check(
+        'the picker is a hidden multi-file input, out of the tab order, with no accept when none was set',
+        (() => {
+            const picker = uploader.find('.AttachmentList-picker');
+
+            return (
+                picker !== null &&
+                picker.type === 'file' &&
+                picker.multiple === true &&
+                picker.hasAttribute('hidden') &&
+                picker.tabIndex === -1 &&
+                !picker.hasAttribute('accept')
+            );
+        })(),
+    );
+
+    check(
+        'and carries the maker’s accept rule when one was set',
+        bind({ contextInfo: PARENT, inputs: { accept: '.pdf,image/*' } })
+            .find('.AttachmentList-picker')
+            .getAttribute('accept') === '.pdf,image/*',
+    );
+
+    const prevented = drop(uploader, [file('minutes.txt')]);
+    await drained();
+
+    const created = creates(uploader);
+
+    check(
+        'a dropped file becomes a Note through webAPI.createRecord on the bound table',
+        created.length === 1 && created[0].indexOf('"entity":"annotation"') !== -1,
+        created.join(' | '),
+    );
+
+    check(
+        'with the name, the type and isdocument beside a bare-base64 body — no data: prefix',
+        (() => {
+            const row = uploader.handle.state.created[0];
+
+            return (
+                row &&
+                row.values.filename === 'minutes.txt' &&
+                row.values.mimetype === 'text/plain' &&
+                row.values.isdocument === true &&
+                row.body === B64
+            );
+        })(),
+        JSON.stringify(uploader.handle.state.created[0] || null),
+    );
+
+    check(
+        'bound to the parent through the navigation property and entity set read from EntityDefinitions',
+        created[0].indexOf('"objectid_account@odata.bind":"/accounts(a1)"') !== -1,
+        created[0],
+    );
+
+    check(
+        'which cost two metadata reads and one look at the organisation’s ceiling',
+        fetches(uploader).length === 2 &&
+            uploader.calls().filter((call) => call.indexOf('webAPI.retrieveMultipleRecords') === 0).length === 1,
+        uploader.calls().filter((call) => call.indexOf('fetch') === 0 || call.indexOf('webAPI.retrieveMultiple') === 0).join(' | '),
+    );
+
+    check(
+        'the drop was taken from the browser, so the frame did not navigate to the file',
+        prevented(),
+    );
+
+    check(
+        'the new Note’s id is the output, announced before the refresh',
+        uploader.outputs().uploadedRecordId === 'created-1' &&
+            uploader.calls().indexOf('notifyOutputChanged') !== -1 &&
+            uploader.calls().indexOf('notifyOutputChanged') < uploader.calls().lastIndexOf('refresh'),
+        `uploadedRecordId ${uploader.outputs().uploadedRecordId}`,
+    );
+
+    check(
+        'and the list asked for a refresh, because the row is not on the view until it does',
+        refreshes(uploader).length === 1 && uploader.rows().length === 10,
+        `${refreshes(uploader).length} refresh, ${uploader.rows().length} rows before the fetch`,
+    );
+
+    uploader.settle();
+
+    check(
+        'after which the row is there, drawn from the server’s own columns',
+        uploader.rows().length === 11 && uploader.headings().indexOf('minutes.txt') !== -1,
+        uploader.headings().join(', '),
+    );
+
+    check(
+        'and says so, in words a sighted user can read',
+        uploader.status() === 'Attached minutes.txt.',
+        uploader.status(),
+    );
+
+    // The row the control just wrote can be downloaded back through the same
+    // stub — which is the rig's body lift being proven rather than assumed.
+    uploader.buttons()[uploader.buttons().length - 1].click();
+    await drained();
+
+    check(
+        'the file just attached downloads back with the same bytes',
+        lastCall(uploader, 'webAPI.retrieveRecord').indexOf('annotation created-1') !== -1 &&
+            lastCall(uploader, 'navigation.openFile').indexOf('"fileName":"minutes.txt"') !== -1 &&
+            lastCall(uploader, 'navigation.openFile').indexOf('"fileSize":1') !== -1,
+        lastCall(uploader, 'navigation.openFile'),
+    );
+
+    /* A second drop on the same instance: nothing is read twice. */
+    drop(uploader, [file('a.txt'), file('b.txt')]);
+    await drained();
+
+    check(
+        'two files are two creates, in order, one at a time',
+        creates(uploader).length === 3 &&
+            creates(uploader)[1].indexOf('"filename":"a.txt"') !== -1 &&
+            creates(uploader)[2].indexOf('"filename":"b.txt"') !== -1,
+        creates(uploader).slice(1).join(' | '),
+    );
+
+    check(
+        'the metadata and the ceiling were not asked for again',
+        fetches(uploader).length === 2 &&
+            uploader.calls().filter((call) => call.indexOf('webAPI.retrieveMultipleRecords') === 0).length === 1,
+    );
+
+    check(
+        'and a batch is summed up as a count',
+        uploader.status() === 'Attached 2 files.' && refreshes(uploader).length === 2,
+        uploader.status(),
+    );
+
+    /* ------------------------------------------- what is refused, and when */
+
+    const tooBig = bind({ getString: speaks, contextInfo: PARENT });
+    drop(tooBig, [big('survey.zip', 6)]);
+    await drained();
+
+    check(
+        'a file over the organisation’s own ceiling is refused before it is read or sent',
+        creates(tooBig).length === 0 &&
+            tooBig.status() === 'survey.zip is larger than the 5 MB limit and was not attached.',
+        tooBig.status(),
+    );
+
+    const makerCeiling = bind({ getString: speaks, contextInfo: PARENT, inputs: { maxUploadSizeMb: 1 } });
+    drop(makerCeiling, [big('photo.jpg', 2, 'image/jpeg')]);
+    await drained();
+
+    check(
+        'a maker’s ceiling applies instead, and the organisation is not asked',
+        creates(makerCeiling).length === 0 &&
+            makerCeiling.status() === 'photo.jpg is larger than the 1 MB limit and was not attached.' &&
+            makerCeiling.calls().every((call) => call.indexOf('webAPI.retrieveMultipleRecords') !== 0),
+        makerCeiling.status(),
+    );
+
+    const typed = bind({ getString: speaks, contextInfo: PARENT, inputs: { accept: '.pdf,image/*' } });
+    drop(typed, [file('notes.txt'), file('scan.PDF', 'application/pdf'), file('photo.png', 'image/png')]);
+    await drained();
+
+    check(
+        'the accept rule is applied to a drop, which bypasses the picker: extension case-insensitively, family by prefix',
+        creates(typed).length === 2 &&
+            typed.status() === 'Attached 2 files. notes.txt is not an allowed file type and was not attached.',
+        typed.status(),
+    );
+
+    const zero = bind({ getString: speaks, contextInfo: PARENT });
+    drop(zero, [file('empty.txt', 'text/plain', '')]);
+    await drained();
+
+    check(
+        'an empty file is refused rather than becoming a Note with no body',
+        creates(zero).length === 0 && zero.status() === 'empty.txt is empty and was not attached.',
+        zero.status(),
+    );
+
+    const refused = bind({ getString: speaks, contextInfo: PARENT, webApiFails: true });
+    drop(refused, [file('minutes.txt')]);
+    await drained();
+
+    check(
+        'a create the server refuses renders the platform’s own message, and asks for no refresh',
+        refused.status() === 'minutes.txt could not be attached. The record could not be created.' &&
+            refreshes(refused).length === 0 &&
+            refused.outputs().uploadedRecordId === '',
+        refused.status(),
+    );
+
+    const noMetadata = bind({ getString: speaks, contextInfo: PARENT, quirks: { relationshipsStatus: 500 } });
+    drop(noMetadata, [file('minutes.txt')]);
+    await drained();
+
+    check(
+        'a metadata read that fails is a failure for that file, not a guessed navigation property',
+        creates(noMetadata).length === 0 && noMetadata.status().indexOf('could not be attached.') !== -1,
+        noMetadata.status(),
+    );
+
+    noMetadata.handle.quirks.relationshipsStatus = 200;
+    drop(noMetadata, [file('minutes.txt')]);
+    await drained();
+
+    check(
+        'and is asked again on the next drop rather than cached as a refusal',
+        creates(noMetadata).length === 1 && fetches(noMetadata).length === 4,
+        `${fetches(noMetadata).length} fetches, ${creates(noMetadata).length} creates`,
+    );
+
+    const cannot = bind({ getString: speaks });
+    const cannotPrevented = drop(cannot, [file('minutes.txt')]);
+    await drained();
+
+    check(
+        'a drop on a host that cannot attach is still taken from the browser, and says why in words',
+        cannotPrevented() && creates(cannot).length === 0 && cannot.status() === 'resx:AttachmentList_UploadUnavailable',
+        cannot.status(),
+    );
+
+    const vetoed = bind({ getString: speaks, contextInfo: PARENT, inputs: { hideUpload: true } });
+    drop(vetoed, [file('minutes.txt')]);
+    await drained();
+
+    check(
+        'where the maker said hideUpload, a drop is ignored without a word',
+        creates(vetoed).length === 0 && vetoed.status() === '',
+        vetoed.status(),
+    );
+
+    /* ------------------------------------------------- the bind, precisely */
+
+    const braced = bind({
+        getString: speaks,
+        contextInfo: { entityTypeName: 'contact', entityId: '{C1}', entityRecordName: 'Dana Ruiz' },
+    });
+    drop(braced, [file('minutes.txt')]);
+    await drained();
+
+    check(
+        'a braced upper-case parent id is written bare and lower-case, under the parent table’s own property',
+        creates(braced)[0] && creates(braced)[0].indexOf('"objectid_contact@odata.bind":"/contacts(c1)"') !== -1,
+        creates(braced)[0],
+    );
+
+    /* -------------------------------------------------------- the gesture */
+
+    const hover = bind({ contextInfo: PARENT });
+    const dragEvent = (type) => ({ type, preventDefault: () => {}, dataTransfer: { types: ['Files'], files: [] } });
+
+    hover.container.dispatchEvent(dragEvent('dragenter'));
+    hover.container.dispatchEvent(dragEvent('dragenter'));
+    hover.container.dispatchEvent(dragEvent('dragleave'));
+
+    check(
+        'crossing a child does not end the drag — dragleave fires per element, so depth is counted',
+        hover.container.classList.contains('AttachmentList--dragging'),
+    );
+
+    hover.container.dispatchEvent(dragEvent('dragleave'));
+
+    check(
+        'and leaving the control does',
+        !hover.container.classList.contains('AttachmentList--dragging'),
+    );
+
+    hover.container.dispatchEvent({ type: 'dragenter', preventDefault: () => {}, dataTransfer: { types: ['text/plain'], files: [] } });
+
+    check(
+        'dragged text is not a drop target',
+        !hover.container.classList.contains('AttachmentList--dragging'),
+    );
+
+    const tornMidRead = bind({ getString: speaks, contextInfo: PARENT });
+    drop(tornMidRead, [file('minutes.txt')]);
+    tornMidRead.destroy();
+    await drained();
+
+    check(
+        'a file being read when the control is destroyed is never sent, and nothing is announced',
+        creates(tornMidRead).length === 0 && tornMidRead.status() === '',
+        tornMidRead.status(),
     );
 
     /* ---------------------------------------------------- what destroy owes */

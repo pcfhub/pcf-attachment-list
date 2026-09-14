@@ -149,6 +149,30 @@
   <data name="downloadedRecordId_Desc" xml:space="preserve">
     <value>El ID de la fila cuya descarga se solicitó por última vez. Úselo para descargar el archivo usted mismo en una aplicación de lienzo.</value>
   </data>
+  <data name="hideUpload_Name" xml:space="preserve">
+    <value>Ocultar Agregar archivos</value>
+  </data>
+  <data name="hideUpload_Desc" xml:space="preserve">
+    <value>Quita el botón Agregar archivos e ignora los archivos soltados. Adjuntar solo está disponible, de todos modos, en un formulario editable con un registro principal.</value>
+  </data>
+  <data name="accept_Name" xml:space="preserve">
+    <value>Tipos de archivo permitidos</value>
+  </data>
+  <data name="accept_Desc" xml:space="preserve">
+    <value>Extensiones o tipos MIME separados por comas, como .pdf,.docx,image/*. Vacío permite cualquier archivo.</value>
+  </data>
+  <data name="maxUploadSizeMb_Name" xml:space="preserve">
+    <value>Carga máxima (MB)</value>
+  </data>
+  <data name="maxUploadSizeMb_Desc" xml:space="preserve">
+    <value>Los archivos más grandes se rechazan antes de leerlos. Sin valor, se usa el límite de adjuntos de la organización.</value>
+  </data>
+  <data name="uploadedRecordId_Name" xml:space="preserve">
+    <value>ID de la nota adjuntada</value>
+  </data>
+  <data name="uploadedRecordId_Desc" xml:space="preserve">
+    <value>El ID de la nota creada más recientemente por este control.</value>
+  </data>
 
   <data name="AttachmentList_Loading" xml:space="preserve">
     <value>Cargando notas…</value>
@@ -202,6 +226,37 @@
   </data>
   <data name="AttachmentList_DownloadUnavailable" xml:space="preserve">
     <value>La descarga requiere una aplicación basada en modelos.</value>
+  </data>
+
+  <data name="AttachmentList_AddFiles" xml:space="preserve">
+    <value>Agregar archivos</value>
+  </data>
+  <data name="AttachmentList_DropHint" xml:space="preserve">
+    <value>Suelte los archivos aquí para adjuntarlos</value>
+  </data>
+  <data name="AttachmentList_Uploading" xml:space="preserve">
+    <value>Adjuntando {0} de {1}: {2}…</value>
+  </data>
+  <data name="AttachmentList_UploadedOne" xml:space="preserve">
+    <value>Se adjuntó {0}.</value>
+  </data>
+  <data name="AttachmentList_UploadedMany" xml:space="preserve">
+    <value>Se adjuntaron {0} archivos.</value>
+  </data>
+  <data name="AttachmentList_UploadFailed" xml:space="preserve">
+    <value>No se pudo adjuntar {0}. {1}</value>
+  </data>
+  <data name="AttachmentList_UploadTooLarge" xml:space="preserve">
+    <value>{0} supera el límite de {1} MB y no se adjuntó.</value>
+  </data>
+  <data name="AttachmentList_UploadRejectedType" xml:space="preserve">
+    <value>{0} no es un tipo de archivo permitido y no se adjuntó.</value>
+  </data>
+  <data name="AttachmentList_UploadEmpty" xml:space="preserve">
+    <value>{0} está vacío y no se adjuntó.</value>
+  </data>
+  <data name="AttachmentList_UploadUnavailable" xml:space="preserve">
+    <value>Para adjuntar archivos se necesita un formulario editable de aplicación basada en modelo.</value>
   </data>
 
   <data name="AttachmentList_Previous" xml:space="preserve">

@@ -1,6 +1,6 @@
 # Attachment List
 
-The notes and attachments on a record, with download.
+The notes and attachments on a record, with download — and drag-and-drop upload.
 
 [![Build](https://github.com/pcfhub/pcf-attachment-list/actions/workflows/build.yml/badge.svg)](https://github.com/pcfhub/pcf-attachment-list/actions/workflows/build.yml)
 [![Release](https://github.com/pcfhub/pcf-attachment-list/actions/workflows/release.yml/badge.svg)](https://github.com/pcfhub/pcf-attachment-list/actions/workflows/release.yml)
@@ -14,13 +14,15 @@ recompiles it.
 
 Point it at a Notes subgrid and it lists what is on the record — the files with
 a glyph, a size and a date, the text notes alongside them — and puts a Download
-button on every row that has a file behind it.
+button on every row that has a file behind it. Since 0.2.0 the list is also a
+drop target: files dropped on it, or picked through **Add files**, become Note
+rows on the record, one `createRecord` each and one refresh at the end.
 
 The out-of-the-box Notes control is a timeline, built for reading a conversation
 with the attachments hanging off the messages. This inverts that: a file list,
 for the forms where the documents are the point.
 
-Four decisions are worth knowing before you read the code.
+Five decisions are worth knowing before you read the code.
 
 **The list and the bytes come from different places.** A file body is a base64
 blob, and a view that selected it would download every attachment on the record
@@ -55,6 +57,20 @@ still earn their place on a custom attachment table, where the columns are
 named something else and the download reads `dataset.getTargetEntityType()`
 rather than the string `annotation`.
 
+**An upload writes what it can read back, and asks nothing it can derive from
+the host.** The Note is created with the file name, MIME type, `isdocument`
+and bare-base64 `documentbody`, bound to the parent record from
+`mode.contextInfo` through `objectid_<table>@odata.bind` — where the
+navigation property and the parent's entity set are both **read** from
+`EntityDefinitions` through a same-origin fetch, because neither follows from
+a logical name by rule (`pcf-data-table` 0.5.0 measured that). The ceiling a
+file is refused against is `organization.maxuploadfilesize` unless the maker
+set one, read once. No `Device.pickFile` and no `Utility` feature: a file input
+and a fetch do both jobs without a second and third install-time prompt. The
+button is drawn only where the host can perform the write — an editable
+model-driven form with a parent record — and everywhere else the list is what
+0.1.x was.
+
 **Text notes are listed, not dropped.** An `annotation` with
 `isdocument = false` has no name, no body and no size. A control that replaces
 the Notes subgrid and silently hides half of what is on the record leaves the
@@ -80,8 +96,12 @@ the schema name the maker mapped to it.
 | `bodyColumn` | SingleLine.Text | input | `documentbody` | The logical name of the column holding the bytes |
 | `hideTextNotes` | TwoOptions | input | `false` | Show only rows carrying a file |
 | `maxDownloadSizeMb` | Whole.None | input | `32` | Refused **before** the fetch, on the row's declared size |
-| `pageSize` | Whole.None | input | `25` | Rows per page; clamped to 250 |
+| `pageSize` | Whole.None | input | — | Rows per page; unset adopts the host's, set overrides |
+| `hideUpload` | TwoOptions | input | `false` | Remove *Add files* and ignore drops |
+| `accept` | SingleLine.Text | input | — | An HTML `accept` rule, applied to drops and to the picker |
+| `maxUploadSizeMb` | Whole.None | input | — | Unset reads `organization.maxuploadfilesize`; set overrides |
 | `downloadedRecordId` | SingleLine.Text | **output** | — | The row whose download was last requested |
+| `uploadedRecordId` | SingleLine.Text | **output** | — | The Note most recently created |
 
 `bodyColumn` is a property rather than a role because it is deliberately *not*
 on the view. It is interpolated into a query string, so it is validated against
@@ -92,6 +112,9 @@ name is let through, so the server's own message names it.
 `default-value="false"` reaches the hub's harness as the string `"false"`, and
 `Boolean("false")` is `true`. It is read through a normaliser, and every preset
 sets it explicitly.
+
+`hideUpload` is inverted for the same reason: a `TwoOptions` cannot default to
+on, so the property that removes the button is the one that exists.
 
 **One `<feature-usage>` entry: WebAPI, `required="false"`.** Required on a host
 that lacks the feature is *component load failure at runtime*, not a null
@@ -106,7 +129,7 @@ literal fallbacks.
 ## On the hub
 
 `demo.fidelity` is **`limited`**, and the line is easy to draw: everything
-except the download is real, and the download is the point.
+except the two transfers is real, and the transfers are the point.
 
 The list, the four file-type glyphs, the size formatting, the titles, the dates,
 the text-note rendering and hiding them again all behave in the harness exactly
@@ -115,9 +138,11 @@ are not on the view — they come from `context.webAPI.retrieveRecord`, which th
 harness does not supply, and go to `context.navigation.openFile`, which is
 model-driven only. So pressing Download there does what the control does on any
 host that cannot deliver a file: reports the press through its output property
-and says so in words. That is the real degraded path rather than a broken one,
-which is why `limited` and not `mocked` — `mocked` would tell a visitor to
-expect a file.
+and says so in words. The upload has the same shape: no Web API and no parent
+record on the page means no *Add files* button, and a dropped file is declined
+in words — which is what a main grid gets. That is the real degraded path rather
+than a broken one, which is why `limited` and not `mocked` — `mocked` would
+tell a visitor to expect a file.
 
 Two presets: **Notes and files**, which is what a Notes subgrid actually holds,
 and **Files only**, which is the same record with the text notes hidden. Every
