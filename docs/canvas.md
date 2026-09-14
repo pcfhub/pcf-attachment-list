@@ -16,7 +16,7 @@ so the file's bytes cannot be fetched and a Note cannot be created;
 with the bytes there is nothing to hand them to. There is no **Add files**
 button in a canvas app, and a dropped file is declined in words.
 
-::image{src=media/screenshot-canvas.png alt="The list rendered in a canvas app, with a line beneath it saying downloading needs a model-driven app" zoom}
+::image{src=media/screenshot-canvas-0.2.png alt="The list rendered in a canvas app, with a line beneath it saying downloading needs a model-driven app" zoom}
 
 The control does not refuse to start over that. It declares WebAPI as an
 **optional** feature, detects both halves at runtime, and degrades: the notes

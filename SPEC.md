@@ -332,7 +332,7 @@ and a dropped file is declined in words — the same as a main grid. Said in
 
 ## Screenshots
 
-`media/screenshot*.png` are rendered by headless Chrome against a scratch
+`media/screenshot-upload*.png` and `screenshot-canvas-0.2.png` are rendered by headless Chrome — **new file names, not replacements**: the hub mirrors a media path once and served the 0.1.x renders through the 0.2.0 sync until the files were renamed — against a scratch
 page that mounts the built bundle on `dev/host.js` with `demo/records.json`,
 a parent record, and a two-file drop already made — one taken, one over the
 ceiling — so the outcome line is in the shot. 720 CSS px wide at

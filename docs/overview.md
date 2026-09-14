@@ -11,7 +11,7 @@ a glyph, a size and a date, the text notes alongside them — and puts a Downloa
 button on every row that has a file behind it. Drop files onto the list, or
 press **Add files**, and each one becomes a Note on the record.
 
-::image{src=media/screenshot.png alt="Attachment List on a form: an Add files button above five files and two notes, and a line beneath saying one dropped file was attached and another refused for size" zoom}
+::image{src=media/screenshot-upload.png alt="Attachment List on a form: an Add files button above five files and two notes, and a line beneath saying one dropped file was attached and another refused for size" zoom}
 
 ## Why this one
 

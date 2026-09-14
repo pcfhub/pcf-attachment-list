@@ -32,9 +32,9 @@
   "media": {
     "logo": "media/logo.png",
     "screenshots": [
-      "media/screenshot.png",
-      "media/screenshot-dark.png",
-      "media/screenshot-canvas.png"
+      "media/screenshot-upload.png",
+      "media/screenshot-upload-dark.png",
+      "media/screenshot-canvas-0.2.png"
     ]
   },
   "demo": {
