@@ -1558,11 +1558,22 @@
                 };
             }
 
-            // Documented model-driven apps only, and a canvas host has no
-            // switch to say otherwise — `openFile: true` under `host: 'canvas'`
-            // would be a host that does not exist.
-            if (o.openFile && o.host !== 'canvas') {
+            /*
+             * Documented model-driven apps only — **and published on canvas
+             * anyway.** Measured with a host probe on a real canvas app,
+             * 2026-09-22: `navigation.openFile` came back `present: true`,
+             * along with every other surface asked about.
+             *
+             * The comment here used to say a canvas host publishing it "would
+             * be a host that does not exist". It is the host that does exist,
+             * and modelling it away is what let `canDownload` answer yes there.
+             */
+            if (o.openFile) {
                 navigation.openFile = function (file, fileOptions) {
+                    if (o.host === 'canvas') {
+                        throw new Error('openFile: Method not implemented.');
+                    }
+
                     log('navigation.openFile', {
                         fileName: (file || {}).fileName,
                         fileSize: (file || {}).fileSize,
@@ -1731,9 +1742,21 @@
                  * column the fixture says nothing about — what a real node
                  * does for a column that is not a choice or a lookup.
                  */
-                utils: o.utils && o.host !== 'canvas'
+                utils: o.utils
                     ? {
                         getEntityMetadata: function (entityName, attributes) {
+                            /*
+                             * **Canvas publishes every surface and refuses on the call**,
+                             * thrown rather than rejected — measured with the host probe on a
+                             * real canvas app, 2026-09-22. Omitting the object here made this
+                             * rig the opposite of the platform: a `typeof` guard failed
+                             * locally and passed there, so a control offering a feature on
+                             * canvas it can only fail at passed every assertion.
+                             */
+                            if (o.host === 'canvas') {
+                                throw new Error('getEntityMetadata: Method not implemented.');
+                            }
+
                             log('utils.getEntityMetadata', { entity: entityName, attributes: attributes });
 
                             if (quirks.metadataRejects) {
@@ -1820,9 +1843,26 @@
                  * `getClientUrl` is how a control finds the organisation for a
                  * metadata `fetch`; absent on canvas and under `page: false`.
                  */
-                page: o.page && o.host !== 'canvas'
+                page: o.page
                     ? {
                         getClientUrl: function () {
+                            /*
+                             * **Canvas publishes `page` and refuses to use
+                             * it.** Measured on a real canvas app, 2026-09-21.
+                             * This rig said the object was absent there, which
+                             * is a friendlier host than the platform: a control
+                             * guarding with `typeof … === 'function'` passed
+                             * here and threw in a real app, and the studio
+                             * replaced the whole list with "Error loading
+                             * control".
+                             *
+                             * `page: false` still models a host that omits the
+                             * object altogether.
+                             */
+                            if (o.host === 'canvas') {
+                                throw new Error('getClientUrl: Method not implemented.');
+                            }
+
                             return CLIENT_URL;
                         },
                     }
@@ -1854,7 +1894,7 @@
                 // and is not available in canvas apps, whatever the manifest
                 // declares. A rig that could be told "canvas, with a Web API"
                 // would pass a control that works nowhere.
-                webAPI: o.webAPI && o.host !== 'canvas'
+                webAPI: o.webAPI
                     ? {
                         /**
                          * **The row arrives on the next fetch, not on the
@@ -1998,6 +2038,18 @@
                          * the control has to handle it either way.
                          */
                         retrieveMultipleRecords: function (entityType, options) {
+                            /*
+                             * **Canvas publishes every surface and refuses on the call**,
+                             * thrown rather than rejected — measured with the host probe on a
+                             * real canvas app, 2026-09-22. Omitting the object here made this
+                             * rig the opposite of the platform: a `typeof` guard failed
+                             * locally and passed there, so a control offering a feature on
+                             * canvas it can only fail at passed every assertion.
+                             */
+                            if (o.host === 'canvas') {
+                                throw new Error('retrieveMultipleRecords: Method not implemented.');
+                            }
+
                             log('webAPI.retrieveMultipleRecords', entityType + ' ' + (options || ''));
 
                             if (o.webApiFails) {
@@ -2134,6 +2186,18 @@
                         },
 
                         retrieveRecord: function (entityType, id, options) {
+                            /*
+                             * **Canvas publishes every surface and refuses on the call**,
+                             * thrown rather than rejected — measured with the host probe on a
+                             * real canvas app, 2026-09-22. Omitting the object here made this
+                             * rig the opposite of the platform: a `typeof` guard failed
+                             * locally and passed there, so a control offering a feature on
+                             * canvas it can only fail at passed every assertion.
+                             */
+                            if (o.host === 'canvas') {
+                                throw new Error('retrieveRecord: Method not implemented.');
+                            }
+
                             log('webAPI.retrieveRecord', entityType + ' ' + id + ' ' + (options || ''));
 
                             var match = null;

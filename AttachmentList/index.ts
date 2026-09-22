@@ -54,6 +54,28 @@ const FALLBACK_MIME = 'application/octet-stream';
 /** A Dataverse logical name, which is what may be interpolated into a query. */
 const LOGICAL_NAME = /^[a-z][a-z0-9_]*$/;
 
+/**
+ * Call a platform method that might not work, and take `undefined` for an
+ * answer.
+ *
+ * **A method existing is not a promise that it works.** Canvas publishes
+ * `page.getClientUrl` and throws `Method not implemented.` when it is called —
+ * measured on a real canvas app, 2026-09-21 — so a `typeof` guard tests the
+ * wrong thing, and a synchronous throw is not something a caller can catch by
+ * asking politely. It escapes the call, escapes `render`, and the studio shows
+ * *Error loading control* in place of the list.
+ *
+ * Every host probe in this file answers "can this host do X?" with a value.
+ * This is that contract for the one that has to call something to find out.
+ */
+function ask<T>(call: () => T): T | undefined {
+    try {
+        return call();
+    } catch {
+        return undefined;
+    }
+}
+
 const KB = 1024;
 const MB = 1024 * 1024;
 
@@ -887,10 +909,42 @@ export class AttachmentList implements ComponentFramework.StandardControl<IInput
      * Both are typed as always present, which is a claim about the type
      * definitions rather than about the host.
      */
+    /**
+     * Whether this host is one where a model-driven-only API means anything.
+     *
+     * **`typeof x.method === 'function'` is not that test.** Measured with a
+     * host probe on a real canvas app, 2026-09-22: **fifteen of fifteen**
+     * platform surfaces are published there — `webAPI.retrieveRecord` and
+     * `navigation.openFile` among them — and the ones safe to call throw
+     * `Method not implemented.` from the call itself.
+     *
+     * `getClientUrl` refuses by throwing, and a thrown refusal is an answer
+     * once it is caught. `uploadHost` already depended on that answer, which is
+     * why the Add button was withheld on canvas and this one was not.
+     */
+    private static modelDrivenHost(context: ComponentFramework.Context<IInputs>): boolean {
+        const page = (context as { page?: { getClientUrl?: unknown } }).page;
+        const fromPage = typeof page?.getClientUrl === 'function'
+            ? ask(() => (page.getClientUrl as () => unknown)())
+            : undefined;
+        const fromGlobal = ask(() => (globalThis as {
+            Xrm?: { Utility?: { getGlobalContext?: () => { getClientUrl?: () => unknown } } };
+        }).Xrm?.Utility?.getGlobalContext?.()?.getClientUrl?.());
+
+        return [fromPage, fromGlobal].some((url) => typeof url === 'string' && url !== '');
+    }
+
+    /**
+     * Whether a file can be fetched and handed to the user.
+     *
+     * Both methods exist on canvas and refuse, so this said yes there and the
+     * Download button was offered on a host that could only report a failure.
+     */
     private static canDownload(context: ComponentFramework.Context<IInputs>): boolean {
         return (
             typeof context.webAPI?.retrieveRecord === 'function' &&
-            typeof context.navigation?.openFile === 'function'
+            typeof context.navigation?.openFile === 'function' &&
+            AttachmentList.modelDrivenHost(context)
         );
     }
 
@@ -924,15 +978,27 @@ export class AttachmentList implements ComponentFramework.StandardControl<IInput
 
         const create = loose.webAPI?.createRecord;
         const info = loose.mode?.contextInfo as Partial<Parent> | null | undefined;
-        const fromPage =
-            typeof loose.page?.getClientUrl === 'function'
-                ? (loose.page.getClientUrl as () => unknown)()
-                : undefined;
-        const fromGlobal = (
+        /*
+         * **A host can publish this method and refuse to run it.** Canvas does:
+         * `getClientUrl: Method not implemented.`, thrown from the call itself,
+         * so `typeof … === 'function'` passes and the throw escapes. Measured on
+         * a real canvas app, 2026-09-21, against `pcf-data-table`.
+         *
+         * That matters more here than it looks. `uploadHost` is reached from
+         * `render()` — through `toolbar()` and `canUpload()` — so the throw
+         * escapes the render and the studio replaces the whole list with *Error
+         * loading control*. The probe exists to answer "can this host upload?"
+         * with a value; a refusal is one of the answers, not an exception.
+         */
+        const page = loose.page;
+        const fromPage = typeof page?.getClientUrl === 'function'
+            ? ask(() => (page.getClientUrl as () => unknown)())
+            : undefined;
+        const fromGlobal = ask(() => (
             globalThis as {
                 Xrm?: { Utility?: { getGlobalContext?: () => { getClientUrl?: () => unknown } } };
             }
-        ).Xrm?.Utility?.getGlobalContext?.()?.getClientUrl?.();
+        ).Xrm?.Utility?.getGlobalContext?.()?.getClientUrl?.());
         const clientUrl = [fromPage, fromGlobal].find(
             (url): url is string => typeof url === 'string' && url !== '',
         );

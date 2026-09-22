@@ -487,6 +487,24 @@ check(
         bind().find('.AttachmentList-note') === null,
 );
 
+/*
+ * **Canvas publishes `retrieveRecord` and `openFile`, and refuses them.**
+ * Measured with a host probe on a real canvas app, 2026-09-22: fifteen of
+ * fifteen surfaces present, the callable ones throwing
+ * `Method not implemented.`
+ *
+ * The assertion above uses `webAPI: false` — a host this rig invents, and not
+ * what canvas is. On canvas both presence tests passed, so the Download button
+ * was offered where pressing it could only report a failure. The Add button was
+ * already withheld there, because `uploadHost` needed a client-URL *answer*
+ * rather than a method; this is the same test applied to the other half.
+ */
+check(
+    'and warns on canvas too, where both methods exist and refuse',
+    bind({ host: 'canvas' }).find('.AttachmentList-note') !== null,
+    'the up-front note is shown rather than a button that cannot work',
+);
+
 /* ================================================================== *
  *  The download. Asynchronous from here down.
  * ================================================================== */
@@ -680,6 +698,22 @@ void (async function downloads() {
     check(
         'no parent record, no Add files: a main grid has nothing to attach to',
         bind().find('.AttachmentList-add') === null,
+    );
+
+    /*
+     * **Canvas publishes `page.getClientUrl` and throws when it is called** —
+     * measured on a real canvas app, 2026-09-21. `uploadHost` reads it, and
+     * `uploadHost` is reached from `render()` by way of `toolbar()` and
+     * `canUpload()`, so an escaping throw means the list does not render at
+     * all rather than rendering without an Add button.
+     *
+     * Two assertions, because they fail differently: the first says the
+     * control survived the refusal, the second says it still reached the right
+     * answer about uploading.
+     */
+    check(
+        'a canvas host that refuses getClientUrl still renders the list',
+        bind({ host: 'canvas', contextInfo: PARENT }).find('.AttachmentList-list') !== null,
     );
 
     check(
