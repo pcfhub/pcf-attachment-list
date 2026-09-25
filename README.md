@@ -5,6 +5,8 @@ The notes and attachments on a record, with download — and drag-and-drop uploa
 [![Build](https://github.com/pcfhub/pcf-attachment-list/actions/workflows/build.yml/badge.svg)](https://github.com/pcfhub/pcf-attachment-list/actions/workflows/build.yml)
 [![Release](https://github.com/pcfhub/pcf-attachment-list/actions/workflows/release.yml/badge.svg)](https://github.com/pcfhub/pcf-attachment-list/actions/workflows/release.yml)
 
+[![Try it live on PCFHub](https://pcfhub.dev/badges/try-it-live.svg)](https://pcfhub.dev/components/pcf-attachment-list)
+
 Documentation lives on [PCFHub](https://pcfhub.dev/components/pcf-attachment-list), built
 from the `docs/` directory in this repository. Edit the Markdown here; the hub
 recompiles it.
