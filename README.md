@@ -130,21 +130,21 @@ literal fallbacks.
 
 ## On the hub
 
-`demo.fidelity` is **`limited`**, and the line is easy to draw: everything
-except the two transfers is real, and the transfers are the point.
+`demo.fidelity` is **`limited`**, and since 2026-09-27 the reason is paging
+rather than the two transfers.
 
 The list, the four file-type glyphs, the size formatting, the titles, the dates,
 the text-note rendering and hiding them again all behave in the harness exactly
-as they do on a form. What the harness cannot be is a Dataverse. A file's bytes
-are not on the view — they come from `context.webAPI.retrieveRecord`, which the
-harness does not supply, and go to `context.navigation.openFile`, which is
-model-driven only. So pressing Download there does what the control does on any
-host that cannot deliver a file: reports the press through its output property
-and says so in words. The upload has the same shape: no Web API and no parent
-record on the page means no *Add files* button, and a dropped file is declined
-in words — which is what a main grid gets. That is the real degraded path rather
-than a broken one, which is why `limited` and not `mocked` — `mocked` would
-tell a visitor to expect a file.
+as they do on a form — and so do Download and *Add files*. `demo/records.json`
+carries a stand-in Dataverse: an account the form sits on, the Notes table, the
+`objectid` relationship between them, and an organisation row with the default
+upload ceiling. Download fetches a file's bytes with
+`context.webAPI.retrieveRecord` and hands them to `context.navigation.openFile`,
+which the demo turns into a download offered in its event log; the four files
+are small real samples. *Add files* writes a Note with
+`context.webAPI.createRecord`, bound to that account, and it joins the list.
+Nothing leaves the browser. What stays inert is the pager: the harness seeds
+one page.
 
 Two presets: **Notes and files**, which is what a Notes subgrid actually holds,
 and **Files only**, which is the same record with the text notes hidden. Every

@@ -151,13 +151,9 @@ promise could exit the process before the suite says what happened.
 
 ## Demo
 
-`fidelity: "limited"`. Everything except the download is real in the harness,
-and the download is the point: the bytes come from a Dataverse the harness does
-not have, and `openFile` is model-driven only. Pressing Download there produces
-the control's genuine degraded behaviour — the output property is set, and a
-line says downloading needs a model-driven app.
-
-Not `mocked`, which would tell a visitor to expect a file.
+`fidelity: "limited"`. When this was written everything except the download
+was real in the harness, and Download produced the control's degraded path.
+Since 2026-09-27 it is real too — see the second *Demo* section below.
 
 ## Not verified
 
@@ -325,10 +321,20 @@ drop-`preventDefault` plus never-refresh mutation failed six.
 
 ## Demo
 
-Still `limited`, and the upload adds a reason: the hub's harness has no Web
-API and no parent record, so there is no *Add files* button on the public page
-and a dropped file is declined in words — the same as a main grid. Said in
-`demo.limitations`. `mocked` would tell a visitor to expect a row.
+Still `limited`, but now only because the pager is inert. Until 2026-09-27 the
+upload and download were the reasons: the harness had no Web API, no parent
+record and no `openFile` for this control, so the public page showed the
+degraded paths. `demo/records.json` now carries a `dataverse` section — an
+account as the form record, the Notes table, the `Account_Annotation`
+relationship binding `objectid_account`, and an organisation row holding the
+default `maxuploadfilesize` — and each file row a small real sample in
+`documentbody` with its true size. Upload needed one thing the harness did not
+answer: this control reads the parent's entity set from
+`EntityDefinitions(LogicalName='account')`, which the stand-in only answered
+from the relationship sub-paths until pcfhub gained it for this. Checked with
+0.2.2's published bundle against the edited harness: Download handed over the
+757-byte PDF, and *Add files* created a Note bound to the account that joined
+the list. A new Note has no size or date, which Dataverse fills in on a form.
 
 ## Screenshots
 
