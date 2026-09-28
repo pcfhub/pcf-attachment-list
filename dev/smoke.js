@@ -155,12 +155,12 @@ function bind(options = {}) {
         calls: () => handle.state.calls,
         outputs: () => instance.getOutputs(),
         find: (selector) => container.querySelector(selector),
-        findAll: (selector) => container.querySelectorAll(selector),
-        rows: () => container.querySelectorAll('.AttachmentList-item'),
-        buttons: () => container.querySelectorAll('.AttachmentList-download'),
+        findAll: (selector) => Array.from(container.querySelectorAll(selector)),
+        rows: () => Array.from(container.querySelectorAll('.AttachmentList-item')),
+        buttons: () => Array.from(container.querySelectorAll('.AttachmentList-download')),
         status: () => (container.querySelector('.AttachmentList-status') || { textContent: '' }).textContent,
         headings: () =>
-            container.querySelectorAll('.AttachmentList-heading').map((element) => element.textContent),
+            Array.from(container.querySelectorAll('.AttachmentList-heading')).map((element) => element.textContent),
         get driven() {
             return driven;
         },
