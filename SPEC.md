@@ -321,7 +321,16 @@ drop-`preventDefault` plus never-refresh mutation failed six.
 
 ## Demo
 
-Still `limited`, but now only because the pager is inert. Until 2026-09-27 the
+**`mocked` since 2026-09-27.** The pager was the last reason for `limited`, and
+pcfhub/pcfhub#51 gave the harness a view that pages. It was checked with
+0.2.2's published bundle at a page size of 2:
+
+- the pager went "1–2", "3–4", "5–6 of 6", with Previous and Next enabled
+  correctly;
+- a file added from page three became "5–6 of 7", and its Note was alone on
+  page four.
+
+Before that it was `limited` only because the pager was inert. Until then the
 upload and download were the reasons: the harness had no Web API, no parent
 record and no `openFile` for this control, so the public page showed the
 degraded paths. `demo/records.json` now carries a `dataverse` section — an

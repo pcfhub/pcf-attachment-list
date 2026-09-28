@@ -130,8 +130,8 @@ literal fallbacks.
 
 ## On the hub
 
-`demo.fidelity` is **`limited`**, and since 2026-09-27 the reason is paging
-rather than the two transfers.
+`demo.fidelity` is **`mocked`**. Everything works, against a stand-in rather
+than Dataverse.
 
 The list, the four file-type glyphs, the size formatting, the titles, the dates,
 the text-note rendering and hiding them again all behave in the harness exactly
@@ -143,8 +143,10 @@ upload ceiling. Download fetches a file's bytes with
 which the demo turns into a download offered in its event log; the four files
 are small real samples. *Add files* writes a Note with
 `context.webAPI.createRecord`, bound to that account, and it joins the list.
-Nothing leaves the browser. What stays inert is the pager: the harness seeds
-one page.
+Nothing leaves the browser.
+
+The pager works too, since pcfhub/pcfhub#51 gave the harness a view that pages.
+It was the last reason for `limited`.
 
 Two presets: **Notes and files**, which is what a Notes subgrid actually holds,
 and **Files only**, which is the same record with the text notes hidden. Every

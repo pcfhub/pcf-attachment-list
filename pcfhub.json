@@ -38,7 +38,7 @@
     ]
   },
   "demo": {
-    "fidelity": "limited",
+    "fidelity": "mocked",
     "bundle": "out/controls/AttachmentList/bundle.js",
     "styles": [
       "out/controls/AttachmentList/css/AttachmentList.css"
@@ -48,7 +48,7 @@
       "Download works against the demo's stand-in Dataverse. A file's bytes are not on the view: the control fetches them one row at a time with context.webAPI.retrieveRecord and hands them to context.navigation.openFile, as on a form. The demo cannot save a file from inside its sandbox, so the event log under the demo offers it as a Download. The four files are small real samples.",
       "Upload works against the same stand-in. Add files, or a dropped file, becomes a context.webAPI.createRecord on the Notes table, bound through objectid to the account the demo's form sits on, and the new Note appears in the list and downloads again. Nothing leaves the browser: Reset or a reload puts the list back, and a new Note shows without the size and date Dataverse would fill in.",
       "Text notes and files are both real. Everything else on the page — the glyphs, the sizes, the titles, the dates, hiding the text notes — is the control doing exactly what it does on a form.",
-      "Paging is inert. The harness seeds a single page and reports no next or previous page, so the pager renders disabled and the page-size property does nothing. On a form it is how many notes are fetched at a time."
+      "Paging works against the stand-in. The presets ask for 25 notes a page, more than the six this record holds; set Page size to 2 and the pager steps through three pages, and a file you add joins the count as a seventh note on a fourth. On a form it is how many notes are fetched at a time."
     ],
     "presets": [
       {
