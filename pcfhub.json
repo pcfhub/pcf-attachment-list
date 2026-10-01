@@ -3,6 +3,7 @@
   "slug": "pcf-attachment-list",
   "name": "Attachment List",
   "tagline": "The notes and attachments on a record, with download — and drag-and-drop upload.",
+  "summary": "Point it at a Notes subgrid and it lists what is on the record as a file list rather than a timeline: each file with a glyph, a size and a date, and a Download button on every row that has a file behind it. Drop files onto the list, or press **Add files**, and each one becomes a Note on the record.\n\n- Text notes are shown alongside the files, and can be hidden with **Hide text notes**\n- A file's contents are fetched only when Download is pressed, not with the list",
   "category": "data",
   "hosts": ["canvas", "model-driven"],
   "tags": [
