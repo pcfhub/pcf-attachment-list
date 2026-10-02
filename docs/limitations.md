@@ -35,11 +35,12 @@ properties empty and the control asks for what it needs itself.
 not provide it, the control is limited to whatever the bound view happens to
 carry — which on the default Notes view means no list at all, and it says so.
 
-**It cannot bind a File column.** Power Apps component framework does not
-support File columns as a bound property type at all — the manifest schema
-reference says so outright — and `context.webAPI` has no method that can write
-one. Attachments therefore have to be Note (`annotation`) rows, which is what
-the Notes subgrid holds anyway.
+**It lists Notes, not File columns.** Attachments here are Note
+(`annotation`) rows, which is what the Notes subgrid holds anyway — any
+number of files per record. A File or Image column holds one file and is a
+different control's job:
+[File Preview](https://pcfhub.dev/components/pcf-file-preview) shows,
+replaces and removes the file in one on a model-driven form.
 
 **A file is fetched whole, into memory.** `retrieveRecord` has no streaming and
 no way to cancel, so **Maximum download (MB)** refuses a file *before* it is
