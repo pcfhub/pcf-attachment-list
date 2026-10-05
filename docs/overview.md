@@ -11,6 +11,10 @@ a glyph, a size and a date, the text notes alongside them — and puts a Downloa
 button on every row that has a file behind it. Drop files onto the list, or
 press **Add files**, and each one becomes a Note on the record.
 
+:::callout{type=warning}
+**Reference example · built with AI.** This control was written with AI (Claude) and tested on a live Dataverse form; its code has not been reviewed line by line. It is published as a worked example and is not maintained — read the source and [SPEC.md](https://github.com/pcfhub/pcf-attachment-list/blob/main/SPEC.md) (what was measured on the form) before you use it. Fixes are not guaranteed.
+:::
+
 ::image{src=media/screenshot-upload.png alt="Attachment List on a form: an Add files button above five files and two notes, and a line beneath saying one dropped file was attached and another refused for size" zoom}
 
 ## Why this one
